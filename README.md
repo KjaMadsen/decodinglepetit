@@ -1,6 +1,9 @@
 # CompCogSci3
 Please put the data under the data/ folder
 
+# Dataset 
+https://openneuro.org/datasets/ds003643/versions/2.0.1 
+
 # Resources
 The NiLearn package docs:
 https://nilearn.github.io/stable/index.html
