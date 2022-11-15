@@ -51,7 +51,7 @@ class BasicBlock(nn.Module):
         return out
     
 class CNN3D(nn.Module):
-    def __init__(self, block=BasicBlock, inplanes=4, n_classes=2):
+    def __init__(self, block=BasicBlock, inplanes=282, n_classes=2):
         super(CNN3D, self).__init__()
         self.n_classes = n_classes
         

@@ -6,14 +6,16 @@ import nibabel as nib
 class lpp_Dataset(Dataset):
     def __init__(self, file, label_list, region=False):
         self.region = region
+        print(file)
         self.file = nib.load(file)
         self.label_list = label_list
 
     def __getitem__(self, index):
         if self.region:
-            img = self.normalize_data(self.file[self.region,index])
+            img = self.normalize_data(self.file)[self.region,index]
         else:
-            img = self.normalize_data(self.file[:,:,:,index])
+            img = self.normalize_data(self.file)[:,:,:,:]
+        img = img.transpose()
         target = self.label_list[index]
         return img, target
     
@@ -21,7 +23,7 @@ class lpp_Dataset(Dataset):
         return len(self.label_list)
     
     def normalize_data(self, data):
-        raise NotImplementedError
+        return np.array(data.dataobj)
 
 
 class mt_Dataset(Dataset):

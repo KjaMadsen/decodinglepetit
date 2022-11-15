@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from model_m2dcnn import M2DCNN
 from model_3dcnn import CNN3D
-from dataset import mt_Dataset
+from dataset import mt_Dataset, lpp_Dataset
 
 import torch
 from torch import nn
@@ -44,8 +44,9 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
             epoch_loss, epoch_corrects, epoch_acc = 0.0, 0, 0.0
             iteration = 0
             length = len(dataloaders_dict[phase].dataset)
-
+            print(dataloaders_dict)
             for inputs, labels in dataloaders_dict[phase]:
+                
                 iteration += 1
                 optimizer.zero_grad()
                 inputs = inputs.float()              
@@ -134,9 +135,9 @@ def train_m2dcnn(dataset_path, label_list, condition, batch_size = 128, num_epoc
     seed_everything()
 
     # DataLoader
-    train_dataset = mt_Dataset(dataset_path[0], label_list[0])
-    valid_dataset = mt_Dataset(dataset_path[1], label_list[1])
-    test_dataset = mt_Dataset(dataset_path[2], label_list[2])
+    train_dataset = lpp_Dataset(dataset_path[0], label_list[0])
+    valid_dataset = lpp_Dataset(dataset_path[1], label_list[1])
+    test_dataset = lpp_Dataset(dataset_path[2], label_list[2])
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
@@ -169,9 +170,9 @@ def train_3dcnn(dataset_path, label_list, condition, batch_size = 128, num_epoch
     seed_everything()
 
     # DataLoader
-    train_dataset = mt_Dataset(dataset_path[0], label_list[0], boxcar=True)
-    valid_dataset = mt_Dataset(dataset_path[1], label_list[1], boxcar=True)
-    test_dataset = mt_Dataset(dataset_path[2], label_list[2], boxcar=True)
+    train_dataset = lpp_Dataset(dataset_path[0], label_list[0])
+    valid_dataset = lpp_Dataset(dataset_path[1], label_list[1])
+    test_dataset = lpp_Dataset(dataset_path[2], label_list[2])
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
@@ -199,3 +200,11 @@ def train_3dcnn(dataset_path, label_list, condition, batch_size = 128, num_epoch
         )
     
     return test_accuracy.cpu().numpy()
+
+def main():
+    lbl = [range(282), range(282), range(282)]
+    trg = ["C:\\Users\\kjart\\OneDrive\\Dokumenter\\KU\\3. semester\\Cog sci 3\\CompCogSci3\\mt_deep-master\\scripts\\tmp\\mri\\derivatives_sub-EN077_func_sub-EN077_task-lppEN_run-08_space-MNIColin27_desc-preproc_bold.nii.gz"]*3
+    train_3dcnn(trg, lbl, "cond", batch_size=1)
+    
+if __name__ == "__main__":
+    main()
