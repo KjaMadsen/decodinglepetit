@@ -5,32 +5,24 @@ from tqdm.notebook import tqdm_notebook as tqdm
 import pandas as pd
 from configparser import ConfigParser
 
+def load_word_info(fname):
+    txt = np.loadtxt(fname, delimiter="\n")
+    labels = []
+    for line in txt[1:]:
+        idx, word, lemma, onset, offset, logfreq, pos, section, top_down, bottom_up, left_corner = line.split(",")
+        labels.append(
+            (int(idx), str(word), str(lemma), float(onset), float(offset), float(logfreq), str(pos), int(section), int(top_down), int(bottom_up), int(left_corner)))
+    return labels
+
 def load_labels(fname):
-    txt = np.loadtxt(fname,dtype='str')
-    labels_dict_ = dict((word, i) for i,word in enumerate([i for i in sorted(list(set(txt[:,0]))) if i != 'base' and i != 'rest']))
-    labels_dict_['base'] = len(set(txt[:,0])) - 2
-    labels_dict_['rest'] = len(set(txt[:,0])) - 1
-    labels_ = []
-    res_ = []
-    cnt = 0
-    for i, chunks in enumerate(txt):
-        if i < 4:
-            res_.append([len(txt)-4+i,6,41])
-            continue
-        
-        if labels_dict_[chunks[0]] < 40:
-            cnt += 1                
-            if cnt > 1:
-                labels_.append([i-4,int(chunks[1]),41])
-            else:
-                labels_.append([i-4,int(chunks[1]),labels_dict_[chunks[0]]])
-        else:
-            cnt = 0
-            labels_.append([i-4,int(chunks[1]),labels_dict_[chunks[0]]])
-    for res in res_:
-        labels_.append(res)
-    return labels_, labels_dict_
-    
+    txt = np.loadtxt(fname, delimiter="\n")
+    labels = []
+    for line in txt[1:]:
+        idx, word, _, onset, offset, _, _, _, _, _, _ = line.split(",")
+        labels.append(
+            (int(idx), str(word), float(onset), float(offset)))
+    return labels
+
 def get_keys_from_value(d, val):
     return [k for k, v in d.items() if v == val]
 

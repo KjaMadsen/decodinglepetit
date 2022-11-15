@@ -1,6 +1,28 @@
 import numpy as np
 from torch.utils.data import Dataset
 import scipy.stats
+import nibabel as nib
+
+class lpp_Dataset(Dataset):
+    def __init__(self, file, label_list, region=False):
+        self.region = region
+        self.file = nib.load(file)
+        self.label_list = label_list
+
+    def __getitem__(self, index):
+        if self.region:
+            img = self.normalize_data(self.file[self.region,index])
+        else:
+            img = self.normalize_data(self.file[:,:,:,index])
+        target = self.label_list[index]
+        return img, target
+    
+    def __len__(self):
+        return len(self.label_list)
+    
+    def normalize_data(self, data):
+        raise NotImplementedError
+
 
 class mt_Dataset(Dataset):
     def __init__(self, file_list, label_list, boxcar=False):
