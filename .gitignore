@@ -130,5 +130,6 @@ dmypy.json
 
 
 data/
+raw_data/
 *.cfg
 venv/
