@@ -1,29 +1,46 @@
 import numpy as np
 from torch.utils.data import Dataset
 import scipy.stats
+import os
 import nibabel as nib
 
 class lpp_Dataset(Dataset):
-    def __init__(self, file, label_list, region=False):
+    def __init__(self, data_dir, labels_dict, language='EN', region=False):
         self.region = region
-        print(file)
-        self.file = nib.load(file)
-        self.label_list = label_list
+        self.label_dict = labels_dict # = {0: [0,1,2,...], ..., 4 : [3,44,65]}, {run: word embed}
+        self.subjects = []
+        for dirpath,_,files in os.walk(data_dir+f"/{language}"):
+            for run, scan in enumerate(sorted(files)):
+                if scan.endswith(".nii.gz"):
+                    self.subjects.append((run, os.path.join(dirpath, scan)))
+        self.scans = []
+        self.imgs = []
+        for scan in self.subjects:
+            run, img = scan
+            nii = nib.load(img)
+            self.scans.append((run, nii))
+        for t in self.scans:
+            self.imgs.append(t)
 
     def __getitem__(self, index):
+        run, raw = self.imgs[index]
         if self.region:
-            img = self.normalize_data(self.file)[self.region,index]
+            img = self.normalize_data(raw)[self.region]
         else:
-            img = self.normalize_data(self.file)[:,:,:,:]
-        img = img.transpose()
-        target = self.label_list[index]
+            img = self.normalize_data(raw)
+        target = self.label_dict[run][index]
         return img, target
     
     def __len__(self):
-        return len(self.label_list)
+        return len(self.label_dict)
     
     def normalize_data(self, data):
+        #need to normalize?
         return np.array(data.dataobj)
+    
+    
+            
+            
 
 
 class mt_Dataset(Dataset):
