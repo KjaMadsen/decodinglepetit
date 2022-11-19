@@ -5,14 +5,18 @@ import os
 import nibabel as nib
 
 class lpp_Dataset(Dataset):
-    def __init__(self, data_dir, labels_dict, language='EN', region=False):
+    def __init__(self, data_dir, language='EN', region=False):
         self.region = region
-        self.label_dict = labels_dict # = {0: [0,1,2,...], ..., 4 : [3,44,65]}, {run: word embed}
         self.subjects = []
-        for dirpath,_,files in os.walk(data_dir+f"/{language}"):
-            for run, scan in enumerate(sorted(files)):
-                if scan.endswith(".nii.gz"):
-                    self.subjects.append((run, os.path.join(dirpath, scan)))
+        self.label_dict = {}
+        for run in os.listdir(data_dir):
+            for dirpath,_,files in os.walk(data_dir+f"/{run}/{language}"):
+                for _, scan in enumerate(sorted(files)):
+                    if scan.endswith(".nii.gz"):
+                        self.subjects.append((run, os.path.join(dirpath, scan)))
+                    elif scan.endswith(".txt"):
+                        self.label_dict[run] = np.load(scan, dtype=int)
+        
         self.scans = []
         self.imgs = []
         for scan in self.subjects:
@@ -21,6 +25,7 @@ class lpp_Dataset(Dataset):
             self.scans.append((run, nii))
         for t in self.scans:
             self.imgs.append(t)
+                    
 
     def __getitem__(self, index):
         run, raw = self.imgs[index]
