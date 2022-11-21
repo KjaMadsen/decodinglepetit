@@ -1,6 +1,9 @@
 # CompCogSci3
 Please put the data under the data/ folder
 
+# Dependencies
+pytorch, textgrid, nibabel, nilearn, numpy
+
 # Dataset 
 https://openneuro.org/datasets/ds003643/versions/2.0.1 
 
