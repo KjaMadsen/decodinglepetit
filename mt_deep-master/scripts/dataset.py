@@ -3,20 +3,19 @@ from torch.utils.data import Dataset
 import scipy.stats
 import os
 import nibabel as nib
+import pandas as pd
 
 class lpp_Dataset(Dataset):
-    def __init__(self, data_dir, language='EN', region=False):
+    def __init__(self, data_dir, anno_dir, language='EN', region=False):
         self.region = region
         self.subjects = []
-        self.label_dict = {}
+        self.label_dict = self.load_label_dict(anno_dir)
         for run in os.listdir(data_dir):
             for dirpath,_,files in os.walk(data_dir+f"/{run}/{language}"):
                 for _, scan in enumerate(sorted(files)):
                     if scan.endswith(".nii.gz"):
                         self.subjects.append((run, os.path.join(dirpath, scan)))
-                    elif scan.endswith(".txt"):
-                        self.label_dict[run] = np.load(scan, dtype=int)
-        
+                    
         self.scans = []
         self.imgs = []
         for scan in self.subjects:
@@ -33,7 +32,7 @@ class lpp_Dataset(Dataset):
             img = self.normalize_data(raw)[self.region]
         else:
             img = self.normalize_data(raw)
-        target = self.label_dict[run][index]
+        target = self.label_dict[run][index][1]
         return img, target
     
     def __len__(self):
@@ -43,6 +42,31 @@ class lpp_Dataset(Dataset):
         #need to normalize?
         return np.array(data.dataobj)
     
+    def load_label_dict(path):
+        file = pd.read_csv(path)
+        # adds words that happen in transistion between scans
+        # to both scans it appears in
+        result = []
+        tmp = []
+        for idx, row in file.iterrows():
+            if True: #row["pos"] == "VERB":
+                w = row["lemma"]
+                if (row["onset"]-len(result)*2) < 2:
+                    tmp.append(w)
+                if (row["offset"]-len(result)*2) > 2:
+                    result.append((row["section"]-1, tmp, len(result)))
+                    if (row["offset"]-len(result)*2) < 2:
+                        tmp = [w]
+                    else:
+                        tmp = []
+            else:
+                result.append(tmp)
+                tmp = []
+        label_dict = {k:[]for k in range(9)}
+        for run, words, idx in result:
+            label_dict[run].append((words, idx))
+        return label_dict
+
     
             
             
