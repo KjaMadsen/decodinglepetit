@@ -2,8 +2,8 @@
 import os
 import shutil
 import random
-
-
+import textgrid as txt
+import numpy as np
 #Structure
 #
 # data - raw_data/derivatives
@@ -105,7 +105,28 @@ def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"
         if not os.path.exists(f"data/Test/{run}/{test_language}/"):
                 os.makedirs(f"data/Test/{run}/{test_language}/")
         shutil.copy(file, f"data/Test/{run}/{test_language}/")
-        
+
+def prepare_labels(textgrid_dir, destination_dir):
+    for path in textgrid_dir:
+        file = txt.TextGrid.fromFile(path)
+        # adds words that happen in transistion between scans
+        # to both scans it appears in
+        result = []
+        tmp = []
+        for _, i in enumerate(range(len(file[0]))):
+            j = file[0][i].maxTime
+            if (j-len(result)*2) <= 2:
+                tmp.append(file[0][i].mark)
+            else:
+                if file[0][i].minTime-len(result)*2 <= 2:
+                    o = file[0][i].mark
+                    tmp.append(o)
+                result.append(tmp)
+                tmp = [o]
+        with open("labels.txt", "w") as file:
+            file.writelines
+
+
 def main():
     unsorted_data_dir = "raw_data/derivatives/"
     #split = (0.8,0.1,0.1)
