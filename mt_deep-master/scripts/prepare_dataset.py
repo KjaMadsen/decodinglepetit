@@ -54,11 +54,13 @@ def words_to_labels(result):
     for run, words in result.items():
         for word in words:
             output[run].append(labels[word])
-    with open("label_dict.txt", "w") as f:
-        for k,v in labels.items():
-            f.writelines(str(k) + " = "+ str(v) + "\n")
+    make_labels_dict_file(labels)
     return output
 
+def make_labels_dict_file(labels_dict, dir="./"):
+    with open(dir+"label_dict.txt", "w") as f:
+        for k,v in labels_dict.items():
+            f.writelines(str(k) + " = "+ str(v) + "\n")
 
 #config 1: same language, different subjects
 #obs: need to make sure that the same subject is not in train/val/test
@@ -120,6 +122,7 @@ def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"
 
 def prepare_spare_classes(annotation_file, destination_dir, target_words, language="EN"):
     # target_words = {"me" : 0, "you": 1, "myself": 0}
+    make_labels_dict_file(target_words)
     file = pd.read_csv(annotation_file)
     result = {k:[] for k in range(9)}
     count = 0
@@ -168,6 +171,7 @@ def prepare_dummy_labels(annotation_file, destination_dir, language = "EN"):
 def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language = "EN"):
     file = pd.read_csv(annotation_file)
     labels = {word:lbl for lbl,word in enumerate(set(vocab))}
+    make_labels_dict_file(labels)
     result = {k:[] for k in range(9)}
     count = 0
     sec = 1
@@ -245,9 +249,9 @@ def main():
     # config3(data, train_language="CN", test_language="EN")
 
     print("\npreparing labels")
-    prepare_labels(annotation_file, "data/", language, pos="PRON")
-    #vocab = ["picture", "forest", "bridge", "golf"]
-    #prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN")
+    # prepare_labels(annotation_file, "data/", language, pos="PRON")
+    # vocab = ["picture", "forest", "bridge", "golf"]
+    # prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN")
     #prepare_dummy_labels(annotation_file, "data/", language="EN")
     # target_words = {"me":0, "you":1, "myself":0, "i":0, "yourself":1}
     # prepare_spare_classes(annotation_file, "data/", target_words, language="EN")
