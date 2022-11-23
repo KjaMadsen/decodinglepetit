@@ -48,6 +48,17 @@ def sort_by_language(data, unsorted_data_dir):
         output[file[len(unsorted_data_dir)+4:len(unsorted_data_dir)+6]].append((run,file))
     return output
 
+def words_to_labels(result):
+    labels = {v:k for k,v in enumerate(set([word for sublist in result.values() for word in sublist]))}
+    output = {k:[] for k in range(9)}
+    for run, words in result.items():
+        for word in words:
+            output[run].append(labels[word])
+    with open("label_dict.txt", "w") as f:
+        for k,v in labels.items():
+            f.writelines(str(k) + " = "+ str(v) + "\n")
+    return output
+
 
 #config 1: same language, different subjects
 #obs: need to make sure that the same subject is not in train/val/test
@@ -107,43 +118,106 @@ def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"
                 os.makedirs(f"data/Test/{run}/{test_language}/")
         shutil.copy(file, f"data/Test/{run}/{test_language}/")
 
-def prepare_labels(annotation_file, destination_dir, language = "EN"):
+def prepare_spare_classes(annotation_file, destination_dir, target_words, language="EN"):
+    # target_words = {"me" : 0, "you": 1, "myself": 0}
     file = pd.read_csv(annotation_file)
-    # adds words that happen in transistion between scans
-    # to both scans it appears in
-    result = {k:[] for k in range(1,10)}
-    tmp = []
+    result = {k:[] for k in range(9)}
     count = 0
+    num_of_classes = len(set(target_words.values()))
     sec = 1
-    for idx, row in file.iterrows():
+    for _, row in file.iterrows():
         if row["section"] != sec:
             count = 0
-            tmp = []
         sec = row["section"]
-        if True: #row["pos"] == "VERB":
-            w = row["lemma"]
-            if (row["onset"]-count*2) < 2:
-                tmp.append(w)
-            if (row["offset"]-count*2) > 2:
-                result[row["section"]].append(tmp)
-                count +=1 
-                if (row["offset"]-count*2) < 2:
-                    tmp = [w]
-                else:
-                    tmp = []
-        else:
-            result.append(tmp)
-            tmp = []
+        w = row["lemma"]
+        if (row["onset"]-count*2) < 2:
+            count +=1  
+            if w in target_words.keys():
+                result[sec-1].append(target_words[w])
+            else:
+                result[sec-1].append("")
+
     for n in ["Train", "Val", "Test"]:
         for run,v in result.items():
             if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
                 os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
             with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
-                for w in v:
-                    sent,idx = w
-                    for word in sent:
-                        f.write(word + " ")
-                    f.write("\n") 
+                for word in v:
+                    f.write(str(word) + "\n")
+                    
+    return num_of_classes
+
+
+def prepare_dummy_labels(annotation_file, destination_dir, language = "EN"):
+    file = pd.read_csv(annotation_file)
+    result = {k:[] for k in range(9)}
+    for _, row in file.iterrows():
+        result[int(row["section"])-1].append(row["idx"])
+
+    for n in ["Train", "Val", "Test"]:
+        for run, content in result.items():
+            if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
+                os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
+            with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
+                for kk in content:
+                    # for word in w:
+                    #     f.write(word + " ")
+                    f.write(str(kk)+"\n") 
+
+
+def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language = "EN"):
+    file = pd.read_csv(annotation_file)
+    labels = {word:lbl for lbl,word in enumerate(set(vocab))}
+    result = {k:[] for k in range(9)}
+    count = 0
+    sec = 1
+    for _, row in file.iterrows():
+        if row["section"] != sec:
+            count = 0
+        sec = row["section"]
+        w = row["lemma"]
+        if (row["onset"]-count*2) < 2:
+            count +=1  
+            if w in vocab :
+                result[sec-1].append(labels[w])
+            else:
+                result[sec-1].append("")
+    
+    for n in ["Train", "Val", "Test"]:
+        for run,v in result.items():
+            if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
+                os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
+            with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
+                for word in v:
+                    f.write(str(word) + "\n")
+
+def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"):
+    file = pd.read_csv(annotation_file)
+    # adds words that happen in transistion between scans
+    # to both scans it appears in
+    result = {k:[] for k in range(9)}
+    count = 0
+    sec = 1
+    for _, row in file.iterrows():
+        if row["section"] != sec:
+            count = 0
+        sec = row["section"]
+        w = row["lemma"]
+        if (row["onset"]-count*2) < 2:
+            count +=1  
+            if row["pos"] == "PRON":
+                result[sec-1].append(w)
+            else:
+                result[sec-1].append("")
+    output = words_to_labels(result)
+    for n in ["Train", "Val", "Test"]:
+        for run,v in output.items():
+            if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
+                os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
+            with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
+                for word in v:
+                    f.write(str(word) + "\n")
+                     
 
 
 def main():
@@ -155,7 +229,7 @@ def main():
     #__init__
     print("\nRemoving folders...")
     for i in os.listdir("data/"):
-        if os.path.isdir(i):
+        if os.path.isdir("data/" + i):
             shutil.rmtree("data/"+i)
     print("Done removing folders")
 
@@ -171,7 +245,13 @@ def main():
     # config3(data, train_language="CN", test_language="EN")
 
     print("\npreparing labels")
-    prepare_labels(annotation_file, "data/", language)
+    prepare_labels(annotation_file, "data/", language, pos="PRON")
+    #vocab = ["picture", "forest", "bridge", "golf"]
+    #prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN")
+    #prepare_dummy_labels(annotation_file, "data/", language="EN")
+    # target_words = {"me":0, "you":1, "myself":0, "i":0, "yourself":1}
+    # prepare_spare_classes(annotation_file, "data/", target_words, language="EN")
+    
     print("Done with labels")
     print("Done!")
     
