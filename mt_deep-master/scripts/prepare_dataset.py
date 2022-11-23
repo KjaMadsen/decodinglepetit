@@ -4,6 +4,7 @@ import shutil
 import random
 import textgrid as txt
 import numpy as np
+import pandas as pd
 #Structure
 #
 # data - raw_data/derivatives
@@ -54,9 +55,9 @@ def config1(data, unsorted_data_dir, language = "CN", split=(0.8,0.1,0.1)):
     relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
     relevant_files = shuffle_dict(relevant_files)
     split_ = (int(len(relevant_files)*split[0]), int(len(relevant_files)*split[0])+int(len(relevant_files)*split[1])) 
-    train = [f for f in list(relevant_files.keys())[:split_[0]]]
-    val = [f for f in list(relevant_files.keys())[split_[0]:split_[1]]]
-    test = [f for f in list(relevant_files.keys())[split_[1]:]]
+    train = list(relevant_files.keys())[:split_[0]]
+    val = list(relevant_files.keys())[split_[0]:split_[1]]
+    test = list(relevant_files.keys())[split_[1]:]
     folders = {"Train":train, "Val":val, "Test":test}
     for partition, subs in folders.items():
         for sub in subs:
@@ -106,50 +107,74 @@ def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"
                 os.makedirs(f"data/Test/{run}/{test_language}/")
         shutil.copy(file, f"data/Test/{run}/{test_language}/")
 
-def prepare_labels(textgrid_dir, destination_dir):
-    for path in textgrid_dir:
-        file = txt.TextGrid.fromFile(path)
-        # adds words that happen in transistion between scans
-        # to both scans it appears in
-        result = []
-        tmp = []
-        for _, i in enumerate(range(len(file[0]))):
-            j = file[0][i].maxTime
-            if (j-len(result)*2) <= 2:
-                tmp.append(file[0][i].mark)
-            else:
-                if file[0][i].minTime-len(result)*2 <= 2:
-                    o = file[0][i].mark
-                    tmp.append(o)
-                result.append(tmp)
-                tmp = [o]
-        with open("labels.txt", "w") as file:
-            file.writelines
+def prepare_labels(annotation_file, destination_dir, language = "EN"):
+    file = pd.read_csv(annotation_file)
+    # adds words that happen in transistion between scans
+    # to both scans it appears in
+    result = {k:[] for k in range(1,10)}
+    tmp = []
+    count = 0
+    sec = 1
+    for idx, row in file.iterrows():
+        if row["section"] != sec:
+            count = 0
+            tmp = []
+        sec = row["section"]
+        if True: #row["pos"] == "VERB":
+            w = row["lemma"]
+            if (row["onset"]-count*2) < 2:
+                tmp.append(w)
+            if (row["offset"]-count*2) > 2:
+                result[row["section"]].append(tmp)
+                count +=1 
+                if (row["offset"]-count*2) < 2:
+                    tmp = [w]
+                else:
+                    tmp = []
+        else:
+            result.append(tmp)
+            tmp = []
+    for n in ["Train", "Val", "Test"]:
+        for run,v in result.items():
+            if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
+                os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
+            with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
+                for w in v:
+                    sent,idx = w
+                    for word in sent:
+                        f.write(word + " ")
+                    f.write("\n") 
 
 
 def main():
     unsorted_data_dir = "raw_data/derivatives/"
+    annotation_file = "raw_data/anno/annotation-EN-lppEN_word_information.csv"
+    language = "EN"
     #split = (0.8,0.1,0.1)
     random.seed(1234)
     #__init__
     print("\nRemoving folders...")
     for i in os.listdir("data/"):
-        shutil.rmtree("data/"+i)
-    
-    #for dirpath,s,files in os.walk("data/"):
-    #    for run, scan in enumerate(sorted(files)):
-    #        if scan.endswith(".nii.gz"): #maybe include labels?
-    #            os.remove(os.path.join(dirpath, scan)) #clear train/val/test folders
-    
+        if os.path.isdir(i):
+            shutil.rmtree("data/"+i)
     print("Done removing folders")
+
+    
+
     print("\nRetriving data...")
     data = get_all_data(unsorted_data_dir)
     print("Done retriving data")
+    
     print("Moving data into folders....")
-    # config1(data, unsorted_data_dir, language="CN")
-    # config2(data, unsorted_data_dir, language="CN")
+    config1(data, unsorted_data_dir, language=language)
+    # config2(data, unsorted_data_dir, language="EN")
     # config3(data, train_language="CN", test_language="EN")
+
+    print("\npreparing labels")
+    prepare_labels(annotation_file, "data/", language)
+    print("Done with labels")
     print("Done!")
+    
     return 0
 
 if __name__=="__main__":
