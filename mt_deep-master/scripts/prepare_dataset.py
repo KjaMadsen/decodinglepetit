@@ -120,7 +120,7 @@ def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"
                 os.makedirs(f"data/Test/{run}/{test_language}/")
         shutil.copy(file, f"data/Test/{run}/{test_language}/")
 
-def prepare_spare_classes(annotation_file, destination_dir, target_words, language="EN"):
+def prepare_spare_classes(annotation_file, destination_dir, target_words, language="EN", oov=""):
     # target_words = {"me" : 0, "you": 1, "myself": 0}
     make_labels_dict_file(target_words)
     file = pd.read_csv(annotation_file)
@@ -138,7 +138,7 @@ def prepare_spare_classes(annotation_file, destination_dir, target_words, langua
             if w in target_words.keys():
                 result[sec-1].append(target_words[w])
             else:
-                result[sec-1].append("")
+                result[sec-1].append(oov)
 
     for n in ["Train", "Val", "Test"]:
         for run,v in result.items():
@@ -168,7 +168,7 @@ def prepare_dummy_labels(annotation_file, destination_dir, language = "EN"):
                     f.write(str(kk)+"\n") 
 
 
-def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language = "EN"):
+def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language = "EN", oov=""):
     file = pd.read_csv(annotation_file)
     labels = {word:lbl for lbl,word in enumerate(set(vocab))}
     make_labels_dict_file(labels)
@@ -185,7 +185,7 @@ def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language 
             if w in vocab :
                 result[sec-1].append(labels[w])
             else:
-                result[sec-1].append("")
+                result[sec-1].append(str(oov))
     
     for n in ["Train", "Val", "Test"]:
         for run,v in result.items():
@@ -195,7 +195,7 @@ def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language 
                 for word in v:
                     f.write(str(word) + "\n")
 
-def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"):
+def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON", oov=""):
     file = pd.read_csv(annotation_file)
     # adds words that happen in transistion between scans
     # to both scans it appears in
@@ -212,7 +212,7 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
             if row["pos"] == "PRON":
                 result[sec-1].append(w)
             else:
-                result[sec-1].append("")
+                result[sec-1].append(str(oov))
     output = words_to_labels(result)
     for n in ["Train", "Val", "Test"]:
         for run,v in output.items():
@@ -231,13 +231,16 @@ def main():
     #split = (0.8,0.1,0.1)
     random.seed(1234)
     #__init__
-    print("\nRemoving folders...")
+    print("\nRemoving folders...\n[Y/N]?")
+    ui = input()
+    if ui.lower() != "y":
+        return 
     for i in os.listdir("data/"):
         if os.path.isdir("data/" + i):
             shutil.rmtree("data/"+i)
     print("Done removing folders")
 
-    
+    oov = "-1" #label to assign to 'out of vocabulary' words
 
     print("\nRetriving data...")
     data = get_all_data(unsorted_data_dir)
@@ -249,12 +252,12 @@ def main():
     # config3(data, train_language="CN", test_language="EN")
 
     print("\npreparing labels")
-    # prepare_labels(annotation_file, "data/", language, pos="PRON")
+    # prepare_labels(annotation_file, "data/", language, pos="PRON", oov=oov)
     # vocab = ["picture", "forest", "bridge", "golf"]
-    # prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN")
+    # prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN", oov=oov)
     #prepare_dummy_labels(annotation_file, "data/", language="EN")
     # target_words = {"me":0, "you":1, "myself":0, "i":0, "yourself":1}
-    # prepare_spare_classes(annotation_file, "data/", target_words, language="EN")
+    # prepare_spare_classes(annotation_file, "data/", target_words, language="EN", oov=oov)
     
     print("Done with labels")
     print("Done!")
