@@ -209,7 +209,7 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
         w = row["lemma"]
         if (row["onset"]-count*2) < 2:
             count +=1  
-            if row["pos"] == "PRON":
+            if row["pos"] == pos:
                 result[sec-1].append(w)
             else:
                 result[sec-1].append(str(oov))
@@ -233,7 +233,7 @@ def main():
     #split = (0.8,0.1,0.1)
     random.seed(1234)
     #__init__
-    print("\nRemoving folders...\n[Y/N]?")
+    print("\nCopy raw data to data dir?...\n[Y/N]?")
     ui = input()
     if ui.lower() == "y":
         for i in os.listdir("data/"):
@@ -253,7 +253,7 @@ def main():
         # config3(data, train_language="CN", test_language="EN")
     oov = "-1" #label to assign to 'out of vocabulary' words
     print("\npreparing labels")
-    prepare_labels(annotation_file, "data/", language, pos="PRON", oov=oov)
+    prepare_labels(annotation_file, "data/", language, pos="VERB", oov=oov)
     # vocab = ["picture", "forest", "bridge", "golf"]
     # prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN", oov=oov)
     # prepare_dummy_labels(annotation_file, "data/", language="EN")

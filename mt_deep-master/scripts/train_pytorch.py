@@ -67,6 +67,7 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
                     batch_loss = loss.item() * inputs.size(0)  
                     epoch_loss += batch_loss
                     epoch_corrects += torch.sum(preds == labels.data)
+                    print("correctly classified classes: \n", torch.where(preds == labels.data)) 
                 #print('{} : Minibatch {}/{} finished (Minibatch Loss: {:.4f})'.format(datetime.datetime.now(),min(batch_size*iteration,length),length, batch_loss/batch_size))
         
             epoch_loss = epoch_loss / length
@@ -144,7 +145,7 @@ def train_m2dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
     dataloaders_dict = {"train": train_dataloader, "valid": valid_dataloader, "test": test_dataloader}
 
-    model = M2DCNN(numClass=39, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
+    model = M2DCNN(numClass=719, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
@@ -203,7 +204,7 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
 
 def main():
     path = ["data/Train", "data/Val", "data/Test"]
-    train_m2dcnn(path, "cond", batch_size=3)
+    train_m2dcnn(path, "cond", batch_size=200, num_epochs=20)
     
 if __name__ == "__main__":
     main()
