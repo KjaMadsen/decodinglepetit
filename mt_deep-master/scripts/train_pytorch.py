@@ -46,11 +46,11 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
             length = len(dataloaders_dict[phase].dataset)
             print(dataloaders_dict)
             for inputs, labels in dataloaders_dict[phase]:
-                
                 iteration += 1
                 optimizer.zero_grad()
                 inputs = inputs.float()              
                 inputs = inputs.to(device)
+                labels = labels.type(torch.LongTensor)
                 labels = labels.to(device)
                 
                 with torch.set_grad_enabled(phase == 'train'):
@@ -131,20 +131,20 @@ def plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
     #send_image(path_to_img=path_to_image, message='Loss results')
 
 
-def train_m2dcnn(dataset_path, label_list, condition, batch_size = 128, num_epochs = 300):
+def train_m2dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     seed_everything()
 
     # DataLoader
-    train_dataset = lpp_Dataset(dataset_path[0], label_list[0])
-    valid_dataset = lpp_Dataset(dataset_path[1], label_list[1])
-    test_dataset = lpp_Dataset(dataset_path[2], label_list[2])
+    train_dataset = lpp_Dataset(dataset_path[0])
+    valid_dataset = lpp_Dataset(dataset_path[1])
+    test_dataset = lpp_Dataset(dataset_path[2])
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
     test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
     dataloaders_dict = {"train": train_dataloader, "valid": valid_dataloader, "test": test_dataloader}
 
-    model = M2DCNN(numClass=2, numFeatues=6528, DIMX=53, DIMY=63, DIMZ=17)
+    model = M2DCNN(numClass=39, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
@@ -166,20 +166,20 @@ def train_m2dcnn(dataset_path, label_list, condition, batch_size = 128, num_epoc
     
     return test_accuracy.cpu().numpy()
 
-def train_3dcnn(dataset_path, label_list, condition, batch_size = 128, num_epochs = 300):
+def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     seed_everything()
 
     # DataLoader
-    train_dataset = lpp_Dataset(dataset_path[0], label_list[0])
-    valid_dataset = lpp_Dataset(dataset_path[1], label_list[1])
-    test_dataset = lpp_Dataset(dataset_path[2], label_list[2])
+    train_dataset = lpp_Dataset(dataset_path[0])
+    valid_dataset = lpp_Dataset(dataset_path[1])
+    test_dataset = lpp_Dataset(dataset_path[2])
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
     test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
     dataloaders_dict = {"train": train_dataloader, "valid": valid_dataloader, "test": test_dataloader}
 
-    model = CNN3D()
+    model = CNN3D(n_classes=39)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
@@ -202,9 +202,8 @@ def train_3dcnn(dataset_path, label_list, condition, batch_size = 128, num_epoch
     return test_accuracy.cpu().numpy()
 
 def main():
-    lbl = [range(282), range(282), range(282)]
-    trg = ["C:\\Users\\kjart\\OneDrive\\Dokumenter\\KU\\3. semester\\Cog sci 3\\CompCogSci3\\mt_deep-master\\scripts\\tmp\\mri\\derivatives_sub-EN077_func_sub-EN077_task-lppEN_run-08_space-MNIColin27_desc-preproc_bold.nii.gz"]*3
-    train_3dcnn(trg, lbl, "cond", batch_size=1)
+    path = ["data/Train", "data/Val", "data/Test"]
+    train_m2dcnn(path, "cond", batch_size=3)
     
 if __name__ == "__main__":
     main()

@@ -9,6 +9,7 @@ class lpp_Dataset(Dataset):
         self.region = region
         self.subjects = []
         self.label_dict = {}
+        self.i = 0
         for run in os.listdir(data_dir):
             for dirpath,_,files in os.walk(data_dir+f"/{run}/{language}"):
                 for _, file in enumerate(sorted(files)):
@@ -19,31 +20,42 @@ class lpp_Dataset(Dataset):
                     
         self.scans = []
         self.imgs = []
-        for scan in self.subjects:
-            run, img = scan
-            nii = nib.load(img)
+        for run, scan in self.subjects:
+            nii = nib.load(scan)
             self.scans.append((run, nii))
-        for t in self.scans:
-            self.imgs.append(t)
+        
                     
 
     def __getitem__(self, index):
         #TODO: decide what to do with scans that
         # does not contain the desired labels
-        run, raw = self.imgs[index]
+        
+        run, raw = self.cache_data(index%282)
+        #run, raw = self.imgs[index]
         if self.region:
-            img = self.normalize_data(raw)[self.region]
+            img = self.normalize_data(raw[index])[self.region]
         else:
-            img = self.normalize_data(raw)
-        target = self.label_dict[run][index]
-        return img, target
+            img = self.normalize_data(raw[index])
+        target = self.label_dict[int(run)][index%282]
+        return img, float(target)
+    
+    def cache_data(self, index):
+        run,scan = self.scans[index]
+        return (run, np.array(scan.dataobj).transpose(3, 0, 1, 2))
     
     def __len__(self):
         return len(self.label_dict)
     
-    def normalize_data(self, data):
+    #def normalize_data(self, data):
         #need to normalize?
-        return np.array(data.dataobj)
+    #   return np.array(data.dataobj)
+
+    def normalize_data(self, data):
+        # Data auguentaion
+        data = scipy.stats.zscore(data, axis=None)
+        data[~ np.isfinite(data)] = 0
+        return data
+        
     
 
     

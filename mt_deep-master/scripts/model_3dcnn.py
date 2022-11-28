@@ -51,7 +51,7 @@ class BasicBlock(nn.Module):
         return out
     
 class CNN3D(nn.Module):
-    def __init__(self, block=BasicBlock, inplanes=282, n_classes=2):
+    def __init__(self, block=BasicBlock, inplanes=1, n_classes=2):
         super(CNN3D, self).__init__()
         self.n_classes = n_classes
         
@@ -66,7 +66,7 @@ class CNN3D(nn.Module):
         self.layer_3 = self._make_layer(block, 64, 64, 2, pooling=True)
         self.layer_4 = self._make_layer(block, 64, 128, 2, pooling=True)
         
-        self.post_conv = nn.Conv3d(128, 64, kernel_size=(4, 4, 2), stride=(1, 1, 1))
+        self.post_conv = nn.Conv3d(128, 64, kernel_size=(4, 4, 4), stride=(1, 1, 1))
         
         self.classifier = nn.Sequential(
             nn.Linear(64, 64),
@@ -113,3 +113,5 @@ class CNN3D(nn.Module):
         x = self.classifier(x)
         
         return x
+    
+    

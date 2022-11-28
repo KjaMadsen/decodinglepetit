@@ -2,7 +2,6 @@
 import os
 import shutil
 import random
-import textgrid as txt
 import numpy as np
 import pandas as pd
 #Structure
@@ -55,6 +54,7 @@ def words_to_labels(result):
         for word in words:
             output[run].append(labels[word])
     make_labels_dict_file(labels)
+    print(len(list(labels.values())), " = number of classes")
     return output
 
 def make_labels_dict_file(labels_dict, dir="./"):
@@ -214,6 +214,7 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
             else:
                 result[sec-1].append(str(oov))
     output = words_to_labels(result)
+    
     for n in ["Train", "Val", "Test"]:
         for run,v in output.items():
             if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
@@ -221,47 +222,47 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
             with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
                 for word in v:
                     f.write(str(word) + "\n")
-                     
+                    
 
 
 def main():
-    unsorted_data_dir = "raw_data/derivatives/"
-    annotation_file = "raw_data/anno/annotation-EN-lppEN_word_information.csv"
     language = "EN"
+    unsorted_data_dir = "raw_data/derivatives/"
+    annotation_file = f"raw_data/annotation/{language}/lppEN_word_information.csv"
+    
     #split = (0.8,0.1,0.1)
     random.seed(1234)
     #__init__
     print("\nRemoving folders...\n[Y/N]?")
     ui = input()
-    if ui.lower() != "y":
-        return 
-    for i in os.listdir("data/"):
-        if os.path.isdir("data/" + i):
-            shutil.rmtree("data/"+i)
-    print("Done removing folders")
+    if ui.lower() == "y":
+        for i in os.listdir("data/"):
+            if os.path.isdir("data/" + i):
+                shutil.rmtree("data/"+i)
+        print("Done removing folders")
 
+       
+
+        print("\nRetriving data...")
+        data = get_all_data(unsorted_data_dir)
+        print("Done retriving data")
+        
+        print("Moving data into folders....")
+        config1(data, unsorted_data_dir, language=language)
+        # config2(data, unsorted_data_dir, language="EN")
+        # config3(data, train_language="CN", test_language="EN")
     oov = "-1" #label to assign to 'out of vocabulary' words
-
-    print("\nRetriving data...")
-    data = get_all_data(unsorted_data_dir)
-    print("Done retriving data")
-    
-    print("Moving data into folders....")
-    config1(data, unsorted_data_dir, language=language)
-    # config2(data, unsorted_data_dir, language="EN")
-    # config3(data, train_language="CN", test_language="EN")
-
     print("\npreparing labels")
-    # prepare_labels(annotation_file, "data/", language, pos="PRON", oov=oov)
+    prepare_labels(annotation_file, "data/", language, pos="PRON", oov=oov)
     # vocab = ["picture", "forest", "bridge", "golf"]
     # prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN", oov=oov)
-    #prepare_dummy_labels(annotation_file, "data/", language="EN")
+    # prepare_dummy_labels(annotation_file, "data/", language="EN")
     # target_words = {"me":0, "you":1, "myself":0, "i":0, "yourself":1}
     # prepare_spare_classes(annotation_file, "data/", target_words, language="EN", oov=oov)
     
     print("Done with labels")
     print("Done!")
-    
+
     return 0
 
 if __name__=="__main__":
