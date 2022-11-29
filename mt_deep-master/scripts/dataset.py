@@ -9,29 +9,25 @@ class lpp_Dataset(Dataset):
         self.region = region
         self.subjects = []
         self.label_dict = {}
-        self.i = 0
         for run in os.listdir(data_dir):
             for dirpath,_,files in os.walk(data_dir+f"/{run}/{language}"):
                 for _, file in enumerate(sorted(files)):
                     if file.endswith(".nii.gz"):
-                        self.subjects.append((run, os.path.join(dirpath, file)))
+                        file_path = os.path.join(dirpath, file)
+                        self.subjects.append((run, nib.load(file_path)))
                     elif file.endswith(".txt"):
                         self.label_dict[int(run)] = np.loadtxt(os.path.join(dirpath, file), dtype=int)
                     
         self.scans = []
-        self.imgs = []
-        for run, scan in self.subjects:
-            nii = nib.load(scan)
-            self.scans.append((run, nii))
+        self.imgs = dict()
         
-                    
-
+        
     def __getitem__(self, index):
         #TODO: decide what to do with scans that
         # does not contain the desired labels
         
-        run, raw = self.cache_data(index%282)
-        #run, raw = self.imgs[index]
+        self.cache_data(index)
+        run, raw = self.imgs[index]
         if self.region:
             img = self.normalize_data(raw[index])[self.region]
         else:
@@ -40,8 +36,8 @@ class lpp_Dataset(Dataset):
         return img, float(target)
     
     def cache_data(self, index):
-        run,scan = self.scans[index]
-        return (run, np.array(scan.dataobj).transpose(3, 0, 1, 2))
+        run,sub = self.subjects[int(index/282)]
+        self.images[index] =  (run, np.array(sub.dataobj).transpose(3, 0, 1, 2)) 
     
     def __len__(self):
         return len(self.label_dict)
