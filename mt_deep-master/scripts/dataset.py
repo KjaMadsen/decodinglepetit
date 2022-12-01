@@ -33,11 +33,11 @@ class lpp_Dataset(Dataset):
         else:
             img = self.normalize_data(raw[index])
         target = self.label_dict[int(run)][index%282]
-        return img, float(target)
+        return img, float(target), index
     
     def cache_data(self, index):
         run,sub = self.subjects[int(index/282)]
-        self.images[index] =  (run, np.array(sub.dataobj).transpose(3, 0, 1, 2)) 
+        self.imgs[index] =  (run, np.array(sub.dataobj).transpose(3, 0, 1, 2)) 
     
     def __len__(self):
         return len(self.label_dict)

@@ -4,6 +4,7 @@ import shutil
 import random
 import numpy as np
 import pandas as pd
+from copy import copy
 #Structure
 #
 # data - raw_data/derivatives
@@ -195,25 +196,39 @@ def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language 
                 for word in v:
                     f.write(str(word) + "\n")
 
+def reformat_messy_dict(dictionary, oov, count):
+    new_dictionary =  {k:[oov]*(count[k]+2) for k in range(9)}
+    for k, v in dictionary.items():
+        for i in v:
+            on_idx, off_idx, w = i
+            new_dictionary[k][on_idx] = w
+            new_dictionary[k][off_idx] = w
+    return new_dictionary
+            
+
 def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON", oov=""):
     file = pd.read_csv(annotation_file)
     # adds words that happen in transistion between scans
     # to both scans it appears in
     result = {k:[] for k in range(9)}
-    count = 0
     sec = 1
+    counts = []
+    count = [0]*9
     for _, row in file.iterrows():
-        if row["section"] != sec:
-            count = 0
+        m_sec = copy(sec)
         sec = row["section"]
         w = row["lemma"]
-        if (row["onset"]-count*2) < 2:
-            count +=1  
-            if row["pos"] == pos:
-                result[sec-1].append(w)
-            else:
-                result[sec-1].append(str(oov))
-    output = words_to_labels(result)
+        off_index = int(row["offset"]/2)
+        if m_sec<sec:
+            count[m_sec-1] = max(on_index, off_index)
+            on_index = 0
+        else:
+            on_index = int(row["onset"]/2)
+        if row["pos"] == pos:
+            result[sec-1].append((on_index, off_index, w))
+    count[-1] = max(on_index, off_index)
+    print(reformat_messy_dict(result, oov, count))
+    output = words_to_labels(reformat_messy_dict(result, oov, count))
     
     for n in ["Train", "Val", "Test"]:
         for run,v in output.items():
@@ -234,7 +249,7 @@ def main():
     random.seed(1234)
     #__init__
     print("\nCopy raw data to data dir?...\n[Y/N]?")
-    ui = input()
+    ui = "n" #input()
     if ui.lower() == "y":
         for i in os.listdir("data/"):
             if os.path.isdir("data/" + i):
