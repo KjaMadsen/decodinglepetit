@@ -5,6 +5,7 @@ import random
 import numpy as np
 import pandas as pd
 from copy import copy
+import nibabel as nib
 #Structure
 #
 # data - raw_data/derivatives
@@ -63,9 +64,16 @@ def make_labels_dict_file(labels_dict, dir="./"):
         for k,v in labels_dict.items():
             f.writelines(str(k) + " = "+ str(v) + "\n")
 
+def save_nii_as_txt(file, destination):
+    img = np.array(nib.load(file).dataobj).transpose(3,0,1,2)
+    for idx, t in enumerate(img):
+        np.save(destination + file[35:45] + file[56:63] + f"_{idx}", t)
+    
+        
+
 #config 1: same language, different subjects
 #obs: need to make sure that the same subject is not in train/val/test
-def config1(data, unsorted_data_dir, language = "CN", split=(0.8,0.1,0.1)):
+def config1(data, unsorted_data_dir, language = "EN", split=(0.8,0.1,0.1)):
     relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
     relevant_files = shuffle_dict(relevant_files)
     split_ = (int(len(relevant_files)*split[0]), int(len(relevant_files)*split[0])+int(len(relevant_files)*split[1])) 
@@ -78,7 +86,8 @@ def config1(data, unsorted_data_dir, language = "CN", split=(0.8,0.1,0.1)):
             for run, file in relevant_files[sub]:
                 if not os.path.exists(f"data/{partition}/{run}/{language}/"):
                     os.makedirs(f"data/{partition}/{run}/{language}/")
-                shutil.copy(file, f"data/{partition}/{run}/{language}/")
+                #shutil.copy(file, f"data/{partition}/{run}/{language}/")
+                save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
                 print(file)
     
 #config 2: same language, same subject
@@ -249,7 +258,7 @@ def main():
     random.seed(1234)
     #__init__
     print("\nCopy raw data to data dir?...\n[Y/N]?")
-    ui = "n" #input()
+    ui = input()
     if ui.lower() == "y":
         for i in os.listdir("data/"):
             if os.path.isdir("data/" + i):

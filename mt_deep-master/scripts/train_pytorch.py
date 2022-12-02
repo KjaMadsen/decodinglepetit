@@ -1,5 +1,13 @@
-import os
 import sys
+import subprocess
+
+
+#for i in ["matplotlib"]:
+#    subprocess.check_call([sys.executable, '-m', 'pip', 'install', i])
+
+
+
+import os
 import datetime
 from tqdm.notebook import tqdm
 import numpy as np
@@ -204,7 +212,7 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
 
 def main():
     path = ["data/Train", "data/Val", "data/Test"]
-    train_m2dcnn(path, "cond", batch_size=200, num_epochs=20)
+    train_m2dcnn(path, "cond", batch_size=100, num_epochs=20)
     
 if __name__ == "__main__":
     main()
