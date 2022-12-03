@@ -2,11 +2,12 @@ import sys
 import subprocess
 
 
-#for i in ["matplotlib"]:
-#    subprocess.check_call([sys.executable, '-m', 'pip', 'install', i])
+for i in ["seaborn", "ipywidgets"]:
+    break
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', i])
 
 
-
+import seaborn as sns
 import os
 import datetime
 from tqdm.notebook import tqdm
@@ -97,10 +98,11 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
         
     return model, train_acc, valid_acc
 
-def test_model(model, dataloaders_dict):
+def test_model(model, dataloaders_dict, nb_classes):
     model.eval()
     model.to(device)
     corrects = 0
+    confusion_matrix = torch.zeros(nb_classes, nb_classes)
     for inputs, labels in tqdm(dataloaders_dict["test"]):
         inputs = inputs.float()
         inputs = inputs.to(device)
@@ -109,6 +111,12 @@ def test_model(model, dataloaders_dict):
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
             corrects += torch.sum(preds == labels.data)
+            for t, p in zip(labels.view(-1), preds.view(-1)):
+                confusion_matrix[t.long(), p.long()] += 1
+
+    plt.figure()
+    sns.heatmap(confusion_matrix)
+    plt.savefig("heatmap.png")
     acc = corrects.double() / len(dataloaders_dict["test"].dataset)
     print('Test Accuracy: {:.4f}'.format(acc))
     return model, acc
@@ -140,7 +148,7 @@ def plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
     #send_image(path_to_img=path_to_image, message='Loss results')
 
 
-def train_m2dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
+def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, num_epochs = 300):
     seed_everything()
 
     # DataLoader
@@ -153,7 +161,7 @@ def train_m2dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
     dataloaders_dict = {"train": train_dataloader, "valid": valid_dataloader, "test": test_dataloader}
 
-    model = M2DCNN(numClass=719, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
+    model = M2DCNN(numClass=nb_classes, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
@@ -161,7 +169,7 @@ def train_m2dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
 
     model, train_accuracy, valid_accuracy = train_model_m2dcnn(model, dataloaders_dict, criterion,
                                                         optimizer, scheduler, num_epochs = num_epochs)
-    model, test_accuracy = test_model(model, dataloaders_dict)
+    model, test_accuracy = test_model(model, dataloaders_dict, nb_classes)
 
     plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
     torch.save(model.state_dict(), './results/{}_weights.pth'.format(condition))
@@ -211,8 +219,14 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     return test_accuracy.cpu().numpy()
 
 def main():
+    binary=True
+    if binary:
+        nb_classes = 2
+    else:
+        with open("label_dict.txt", "r") as f:
+            nb_classes = len(f.readlines())
     path = ["data/Train", "data/Val", "data/Test"]
-    train_m2dcnn(path, "cond", batch_size=100, num_epochs=20)
+    train_m2dcnn(path, "cond", nb_classes=nb_classes, batch_size=200, num_epochs=10)
     
 if __name__ == "__main__":
     main()

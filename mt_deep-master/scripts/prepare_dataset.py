@@ -161,44 +161,42 @@ def prepare_spare_classes(annotation_file, destination_dir, target_words, langua
     return num_of_classes
 
 
-def prepare_dummy_labels(annotation_file, destination_dir, language = "EN"):
-    file = pd.read_csv(annotation_file)
-    result = {k:[] for k in range(9)}
-    for _, row in file.iterrows():
-        result[int(row["section"])-1].append(row["idx"])
-
-    for n in ["Train", "Val", "Test"]:
-        for run, content in result.items():
-            if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
-                os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
-            with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
-                for kk in content:
-                    # for word in w:
-                    #     f.write(word + " ")
-                    f.write(str(kk)+"\n") 
+def prepare_binary_labels(destination_dir, oov, language = "EN"):
+    for n in ["Train", "Test", "Val"]:
+        for run in range(9):
+            f = np.loadtxt(destination_dir+ f"{n}/{run}/{language}/labels.txt")
+            with open("label_dict.txt", "r") as lbls:
+                for lbl in lbls.readlines():
+                    w, l = lbl.split("=")
+                    if w.strip() == oov:
+                        oov_i = int(l.strip("\n"))
+            binary_labels = np.array(f!=oov_i, dtype=int)
+            with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as nf:
+                for i in binary_labels:
+                    nf.write(str(i)+"\n")
 
 
 def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language = "EN", oov=""):
-    file = pd.read_csv(annotation_file)
+    df = pd.read_csv(annotation_file)
     labels = {word:lbl for lbl,word in enumerate(set(vocab))}
     make_labels_dict_file(labels)
     result = {k:[] for k in range(9)}
-    count = 0
-    sec = 1
-    for _, row in file.iterrows():
-        if row["section"] != sec:
-            count = 0
-        sec = row["section"]
-        w = row["lemma"]
-        if (row["onset"]-count*2) < 2:
-            count +=1  
-            if w in vocab :
-                result[sec-1].append(labels[w])
-            else:
-                result[sec-1].append(str(oov))
+    count = [0]*9
+ 
+    for section in range(9):
+        for _, row in df.loc[df["section"] == section+1].iterrows():
+            w = row["lemma"]
+            off_index = int(row["offset"]/2)
+            on_index = int(row["onset"]/2)
+            if w in vocab:
+                result[section].append((on_index, off_index, w))
+        count[section] = off_index
+    
+    print(reformat_messy_dict(result, oov, count))
+    output = words_to_labels(reformat_messy_dict(result, oov, count))
     
     for n in ["Train", "Val", "Test"]:
-        for run,v in result.items():
+        for run,v in output.items():
             if not os.path.exists(destination_dir+ f"{n}/{run}/{language}/"):
                 os.makedirs(destination_dir+ f"{n}/{run}/{language}/")
             with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as f:
@@ -206,7 +204,7 @@ def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language 
                     f.write(str(word) + "\n")
 
 def reformat_messy_dict(dictionary, oov, count):
-    new_dictionary =  {k:[oov]*(count[k]+2) for k in range(9)}
+    new_dictionary =  {k:[oov]*(count[k]+1) for k in range(9)}
     for k, v in dictionary.items():
         for i in v:
             on_idx, off_idx, w = i
@@ -216,26 +214,20 @@ def reformat_messy_dict(dictionary, oov, count):
             
 
 def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON", oov=""):
-    file = pd.read_csv(annotation_file)
+    df = pd.read_csv(annotation_file)
     # adds words that happen in transistion between scans
     # to both scans it appears in
     result = {k:[] for k in range(9)}
     sec = 1
-    counts = []
     count = [0]*9
-    for _, row in file.iterrows():
-        m_sec = copy(sec)
-        sec = row["section"]
-        w = row["lemma"]
-        off_index = int(row["offset"]/2)
-        if m_sec<sec:
-            count[m_sec-1] = max(on_index, off_index)
-            on_index = 0
-        else:
+    for section in range(9):
+        for _, row in df.loc[df["section"] == section+1].iterrows():
+            w = row["lemma"]
+            off_index = int(row["offset"]/2)
             on_index = int(row["onset"]/2)
-        if row["pos"] == pos:
-            result[sec-1].append((on_index, off_index, w))
-    count[-1] = max(on_index, off_index)
+            if row["pos"] == pos:
+                result[section].append((on_index, off_index, w))
+        count[section] = off_index
     print(reformat_messy_dict(result, oov, count))
     output = words_to_labels(reformat_messy_dict(result, oov, count))
     
@@ -277,9 +269,10 @@ def main():
         # config3(data, train_language="CN", test_language="EN")
     oov = "-1" #label to assign to 'out of vocabulary' words
     print("\npreparing labels")
-    prepare_labels(annotation_file, "data/", language, pos="VERB", oov=oov)
-    # vocab = ["picture", "forest", "bridge", "golf"]
-    # prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN", oov=oov)
+    prepare_labels(annotation_file, "data/", language, pos="PRON", oov=oov)
+    prepare_binary_labels("data/", oov, language=language)
+    #vocab = ["picture", "forest", "bridge", "golf"]
+    #prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN", oov=oov)
     # prepare_dummy_labels(annotation_file, "data/", language="EN")
     # target_words = {"me":0, "you":1, "myself":0, "i":0, "yourself":1}
     # prepare_spare_classes(annotation_file, "data/", target_words, language="EN", oov=oov)
