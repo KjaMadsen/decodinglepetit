@@ -134,3 +134,4 @@ raw_data/
 *.cfg
 venv/
 label_dict.txt
+*.png
