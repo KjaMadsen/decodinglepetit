@@ -51,7 +51,8 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
             print(dataloaders_dict)
             for inputs, labels in dataloaders_dict[phase]:
                 iteration += 1
-                print(iteration*200/length)
+                if iteration%10==0:
+                    print(f"{iteration*200/length : .2f}", "%")
                 optimizer.zero_grad()
                 inputs = inputs.float()              
                 inputs = inputs.to(device)
