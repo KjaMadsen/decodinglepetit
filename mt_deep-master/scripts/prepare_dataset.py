@@ -18,6 +18,8 @@ import nibabel as nib
 # |
 # MRI-files and labels.txt
 
+
+
 def shuffle_dict(dictionary):
     keys = list(dictionary.keys())
     random.shuffle(keys)
@@ -106,11 +108,12 @@ def config2(data, unsorted_data_dir, language = "CN"):
         for file in v:
             if not os.path.exists(f"data/{k}/{subject_name}"):
                 os.makedirs(f"data/{k}/{subject_name}")
-            shutil.copy(file, f"data/{k}/{subject_name}/")
+            save_nii_as_txt(file, f"data/{k}/{subject_name}/")
             print(file)
     
 #config 3: different language
 def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"):
+    raise Exception
     train_files = sort_by_language(data, unsorted_data_dir)[train_language]
     test_files = sort_by_language(data, unsorted_data_dir)[test_language]
 
@@ -161,7 +164,7 @@ def prepare_spare_classes(annotation_file, destination_dir, target_words, langua
     return num_of_classes
 
 
-def prepare_binary_labels(destination_dir, oov, language = "EN"):
+def convert_to_binary_labels(destination_dir, oov, language = "EN"):
     for n in ["Train", "Test", "Val"]:
         for run in range(9):
             f = np.loadtxt(destination_dir+ f"{n}/{run}/{language}/labels.txt")
@@ -174,6 +177,7 @@ def prepare_binary_labels(destination_dir, oov, language = "EN"):
             with open(destination_dir+ f"{n}/{run}/{language}/labels.txt", "w") as nf:
                 for i in binary_labels:
                     nf.write(str(i)+"\n")
+    return True
 
 
 def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language = "EN", oov=""):
@@ -240,7 +244,24 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
                     f.write(str(word) + "\n")
                     
 
+def clear_data_dir():
+    print("\nCopy raw data to data dir?...\n[Y/N]?")
+    ui = input()
+    if ui.lower() == "y":
+        for i in os.listdir("data/"):
+            if os.path.isdir("data/" + i):
+                shutil.rmtree("data/"+i)
+        print("Done removing folders")
 
+def fill_data_dir(unsorted_data_dir, config, language):
+    print("\nRetriving data...")
+    data = get_all_data(unsorted_data_dir)
+    print("Done retriving data")
+    print("Moving data into folders....")
+    config(data, unsorted_data_dir, language=language)
+    # config2(data, unsorted_data_dir, language="EN")
+    
+    
 def main():
     language = "EN"
     unsorted_data_dir = "raw_data/derivatives/"
@@ -269,8 +290,8 @@ def main():
         # config3(data, train_language="CN", test_language="EN")
     oov = "-1" #label to assign to 'out of vocabulary' words
     print("\npreparing labels")
-    prepare_labels(annotation_file, "data/", language, pos="PRON", oov=oov)
-    prepare_binary_labels("data/", oov, language=language)
+    prepare_labels(annotation_file, "data/", language, pos="NOUN", oov=oov)
+    #prepare_binary_labels("data/", oov, language=language)
     #vocab = ["picture", "forest", "bridge", "golf"]
     #prepare_handpicked_labels(annotation_file, "data/", vocab, language="EN", oov=oov)
     # prepare_dummy_labels(annotation_file, "data/", language="EN")

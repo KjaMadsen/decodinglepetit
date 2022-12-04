@@ -23,11 +23,11 @@ class lpp_Dataset(Dataset):
     def __getitem__(self, index):
         img = self.normalize_data(np.load(self.file_list[index]))
         run = int(self.file_list[index][self.run_index])
-        target = self.label_dict[run][index]
+        target = self.label_dict[run][index%len(self.label_dict[run])]
         return img, target
     
     def __len__(self):
-        return len(self.label_dict)
+        return len(self.file_list)
     
     #def normalize_data(self, data):
         #need to normalize?
