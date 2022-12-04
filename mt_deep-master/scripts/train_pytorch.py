@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam 
 from torch.optim.lr_scheduler import ExponentialLR
 
+
 device = torch.device('cpu' if not torch.cuda.is_available() else 'cuda')
 
 def seed_everything(seed=1234):
@@ -30,7 +31,7 @@ def seed_everything(seed=1234):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler, num_epochs, schedule=True):
+def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler, num_epochs, is3D=False, schedule=True):
     model.to(device)
     print(device)
     train_acc = []
@@ -51,8 +52,12 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
             print(dataloaders_dict)
             for inputs, labels in dataloaders_dict[phase]:
                 iteration += 1
+                if is3D:
+                    inputs = inputs.unsqueeze(1)
                 if iteration%10==0:
-                    print(f"{iteration*200/length : .2f}", "%")
+                    print(f"{iteration*100/length : .2f}", "%")
+                
+                
                 optimizer.zero_grad()
                 inputs = inputs.float()              
                 inputs = inputs.to(device)
@@ -73,15 +78,15 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
                     batch_loss = loss.item() * inputs.size(0)  
                     epoch_loss += batch_loss
                     epoch_corrects += torch.sum(preds == labels.data)
-                    
+                
                 #print('{} : Minibatch {}/{} finished (Minibatch Loss: {:.4f})'.format(datetime.datetime.now(),min(batch_size*iteration,length),length, batch_loss/batch_size))
         
             epoch_loss = epoch_loss / length
             epoch_acc = epoch_corrects.double() /length
             if phase == 'train':
-                train_acc.append([epoch_acc,epoch_loss])
+                train_acc.append([epoch_acc.cpu(),epoch_loss])
             else:
-                valid_acc.append([epoch_acc,epoch_loss])
+                valid_acc.append([epoch_acc.cpu(),epoch_loss])
             print('##### {} Loss: {:.4f} Acc: {:.4f} #####'.format(phase, epoch_loss, epoch_acc))
             
         if schedule:
@@ -110,13 +115,13 @@ def test_model(model, dataloaders_dict, nb_classes):
             corrects += torch.sum(preds == labels.data)
             for t, p in zip(labels.view(-1), preds.view(-1)):
                 confusion_matrix[t.long(), p.long()] += 1
-
+        
     plt.figure()
     sns.heatmap(confusion_matrix/torch.sum(confusion_matrix)*10)
     plt.savefig("heatmap.png")
     acc = corrects.double() / len(dataloaders_dict["test"].dataset)
     print('Test Accuracy: {:.4f}'.format(acc))
-    return model, acc
+    return model, acc.cpu().numpy()
 
 def plot_results(train_acc, valid_acc, test_acc, path):
     f,ax = plt.subplots()
@@ -160,6 +165,7 @@ def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, nu
 
     model = M2DCNN(numClass=nb_classes, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
 
+    
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
     scheduler = ExponentialLR(optimizer, gamma=0.99)
@@ -178,9 +184,9 @@ def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, nu
             }
         )
     
-    return test_accuracy.cpu().numpy()
+    return test_accuracy
 
-def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
+def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300, nb_classes=32):
     seed_everything()
 
     # DataLoader
@@ -193,14 +199,16 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
     dataloaders_dict = {"train": train_dataloader, "valid": valid_dataloader, "test": test_dataloader}
 
-    model = CNN3D(n_classes=39)
-
+    model = CNN3D(n_classes=nb_classes)
+    
+    
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
     scheduler = ExponentialLR(optimizer, gamma=0.99)
 
     model, train_accuracy, valid_accuracy = train_model_m2dcnn(model, dataloaders_dict, criterion,
-                                                        optimizer, scheduler, num_epochs = num_epochs)
+                                                        optimizer, scheduler, is3D=True, num_epochs = num_epochs)
+    print(datetime.datetime.now())
     model, test_accuracy = test_model(model, dataloaders_dict)
 
     plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
@@ -215,14 +223,44 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300):
     
     return test_accuracy.cpu().numpy()
 
-def train(binary, batch_size, num_epochs):
+def test(model, weights_file,nb_classes, dataloader):
+    model.load_state_dict(torch.load(weights_file))
+    model.eval()
+    model.to(device)
+    corrects = 0
+    confusion_matrix = torch.zeros(nb_classes, nb_classes)
+    for inputs, labels in tqdm(dataloader):
+        inputs = inputs.float()
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+        with torch.set_grad_enabled(False):
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            corrects += torch.sum(preds == labels.data)
+            for t, p in zip(labels.view(-1), preds.view(-1)):
+                confusion_matrix[t.long(), p.long()] += 1
+        
+    plt.figure()
+    sns.heatmap(confusion_matrix/torch.sum(confusion_matrix)*10)
+    plt.savefig("heatmap.png")
+    acc = corrects.double() / len(dataloader.dataset)
+    print('Test Accuracy: {:.4f}'.format(acc))
+    return model, acc
+
+
+def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d"):
     if binary:
         nb_classes = 2
     else:
         with open("label_dict.txt", "r") as f:
             nb_classes = len(f.readlines())
     path = ["data/Train", "data/Val", "data/Test"]
-    train_m2dcnn(path, "cond", nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs)
-    
+    t0 = datetime.datetime.now()
+    print(t0)
+    if model == "2d":
+        train_m2dcnn(path, config, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs)
+    else:
+        train_3dcnn(path, config, num_epochs=num_epochs, batch_size=batch_size, nb_classes=nb_classes)
+    print(datetime.datetime.now()-t0)
 if __name__ == "__main__":
-    train(False, 100, 5)
+    train(False, 100, 1, "3d")
