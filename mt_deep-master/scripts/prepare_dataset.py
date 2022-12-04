@@ -67,8 +67,8 @@ def make_labels_dict_file(labels_dict, dir="./"):
             f.writelines(str(k) + " = "+ str(v) + "\n")
 
 def save_nii_as_txt(file, destination):
-    img = np.array(nib.load(file).dataobj).transpose(3,0,1,2)
-    for idx, t in enumerate(img):
+    img = nib.load(file).get_fdata(dtype=np.float32).transpose(3,0,1,2)
+    for idx, t in enumerate(img[4:]): #discard first four
         np.save(destination + file[35:45] + file[56:63] + f"_{idx}", t)
     
         
