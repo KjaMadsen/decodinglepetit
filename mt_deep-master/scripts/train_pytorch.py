@@ -54,8 +54,8 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
                 iteration += 1
                 if is3D:
                     inputs = inputs.unsqueeze(1)
-                if iteration%10==0:
-                    print(f"{iteration*100/length : .2f}", "%")
+                if iteration%100==0:
+                    print(f"{iteration*10000/length : .2f}", "%")
                 
                 
                 optimizer.zero_grad()
