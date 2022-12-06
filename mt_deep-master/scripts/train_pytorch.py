@@ -236,6 +236,7 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
     top3_corrects = 0
     confusion_matrix = torch.zeros(nb_classes, nb_classes)
     for inputs, labels in tqdm(dataloader):
+        print("..")
         inputs = inputs.float()
         inputs = inputs.to(device)
         labels = labels.to(device)
@@ -250,7 +251,7 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
         
     plt.figure()
     sns.heatmap(confusion_matrix/torch.sum(confusion_matrix)*10)
-    plt.savefig(f"{config}heatmap.png")
+    plt.savefig(f"{config}_heatmap.png")
     acc = corrects.double() / len(dataloader.dataset)
     t3acc = top3_corrects.double() / len(dataloader.dataset)
     print('Test Accuracy: {:.4f}'.format(acc))

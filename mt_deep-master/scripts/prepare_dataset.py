@@ -245,7 +245,7 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
                     
 
 def clear_data_dir():
-    print("\nCopy raw data to data dir?...\n[Y/N]?")
+    print("\nDelete the contents of data dir?...\n[Y/N]?")
     ui = input()
     if ui.lower() == "y":
         for i in os.listdir("data/"):
