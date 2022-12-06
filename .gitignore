@@ -136,3 +136,4 @@ venv/
 label_dict.txt
 *.png
 results/
+aux_data/
