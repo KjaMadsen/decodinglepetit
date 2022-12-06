@@ -224,9 +224,10 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300, nb_
     return test_accuracy.cpu().numpy()
 
 def write_result(acc, top3, config):
-    with open("result/result_log.txt", "a") as f:
+    with open("results/result_log.txt", "a") as f:
         string = f"\n\n{datetime.datetime.now()}\nconfig: {config}\naccuracy : {acc}\ntop3 accuracy : {top3}"
-        f.write("accuracy")
+        f.write(string)
+        f.close()
 
 def test(model, config:str, weights_file,nb_classes, dataloader):
     model.load_state_dict(torch.load(weights_file))
@@ -245,7 +246,11 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
             _, preds = torch.max(outputs, 1)
             _, top3preds = torch.topk(outputs, 3)
             corrects += torch.sum(preds == labels.data)
-            top3_corrects += torch.eq(labels, top3preds).any(dim=1)
+            for g in labels:
+                if g in top3preds:
+                    top3_corrects += 1
+                    continue
+            #top3_corrects += torch.eq(labels, top3preds).any(dim=1)
             for t, p in zip(labels.view(-1), preds.view(-1)):
                 confusion_matrix[t.long(), p.long()] += 1
         
@@ -253,7 +258,7 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
     sns.heatmap(confusion_matrix/torch.sum(confusion_matrix)*10)
     plt.savefig(f"{config}_heatmap.png")
     acc = corrects.double() / len(dataloader.dataset)
-    t3acc = top3_corrects.double() / len(dataloader.dataset)
+    t3acc = top3_corrects / len(dataloader.dataset)
     print('Test Accuracy: {:.4f}'.format(acc))
     write_result(acc, t3acc, config)
     return model, acc
@@ -274,4 +279,5 @@ def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d"):
         train_3dcnn(path, config, num_epochs=num_epochs, batch_size=batch_size, nb_classes=nb_classes)
     print(datetime.datetime.now()-t0)
 if __name__ == "__main__":
-    train(False, 100, 1, "3d")
+    test_dataloader = DataLoader(lpp_Dataset("data/Test/"), batch_size=50, shuffle=False)
+    test(M2DCNN(numClass=16, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73), "config1_EN_top15Nouns","results/config1_EN_top15Noun_weights.pth", 16, test_dataloader)
