@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from copy import copy
 import nibabel as nib
+import codecs
 #Structure
 #
 # data - raw_data/derivatives
@@ -62,7 +63,7 @@ def words_to_labels(result):
     return output
 
 def make_labels_dict_file(labels_dict, dir="./"):
-    with open(dir+"label_dict.txt", "w") as f:
+    with codecs.open(dir+"label_dict.txt", "w", encoding="utf-8") as f:
         for k,v in labels_dict.items():
             f.writelines(str(k) + " = "+ str(v) + "\n")
 
@@ -89,14 +90,15 @@ def config1(data, unsorted_data_dir, language = "EN", split=(0.8,0.1,0.1)):
                 if not os.path.exists(f"data/{partition}/{run}/{language}/"):
                     os.makedirs(f"data/{partition}/{run}/{language}/")
                 #shutil.copy(file, f"data/{partition}/{run}/{language}/")
-                save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
                 print(file)
+                save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
+               
     
 #config 2: same language, same subject
 #use only one subject to train/val/test
 #obs: need to make sure the labels exists in train/val/test
-def config2(data, unsorted_data_dir, language = "CN"):
-    relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir)
+def config2(data, unsorted_data_dir, language = "EN"):
+    relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
     subject_name = random.choice(list(relevant_files.keys())) #choose a random subject for training
     subject = relevant_files[subject_name]
     random.shuffle(subject) 
@@ -259,7 +261,6 @@ def fill_data_dir(unsorted_data_dir, config, language):
     print("Done retriving data")
     print("Moving data into folders....")
     config(data, unsorted_data_dir, language=language)
-    # config2(data, unsorted_data_dir, language="EN")
     
     
 def main():

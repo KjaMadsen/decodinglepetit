@@ -1,6 +1,6 @@
 import sys
 import subprocess
-
+import codecs
 import seaborn as sns
 import os
 import datetime
@@ -154,9 +154,9 @@ def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, nu
     seed_everything()
 
     # DataLoader
-    train_dataset = lpp_Dataset(dataset_path[0])
-    valid_dataset = lpp_Dataset(dataset_path[1])
-    test_dataset = lpp_Dataset(dataset_path[2])
+    train_dataset = lpp_Dataset(dataset_path[0], language="EN")
+    valid_dataset = lpp_Dataset(dataset_path[1], language="EN")
+    test_dataset = lpp_Dataset(dataset_path[2], language="EN")
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
@@ -268,7 +268,7 @@ def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d"):
     if binary:
         nb_classes = 2
     else:
-        with open("label_dict.txt", "r") as f:
+        with codecs.open("label_dict.txt", "r", encoding="utf-8") as f:
             nb_classes = len(f.readlines())
     path = ["data/Train", "data/Val", "data/Test"]
     t0 = datetime.datetime.now()
