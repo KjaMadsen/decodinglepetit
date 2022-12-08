@@ -108,9 +108,10 @@ def config2(data, unsorted_data_dir, language = "EN"):
     folders = {"Train":train, "Val":val, "Test":test}
     for k, v in folders.items():
         for file in v:
-            if not os.path.exists(f"data/{k}/{subject_name}"):
-                os.makedirs(f"data/{k}/{subject_name}")
-            save_nii_as_txt(file, f"data/{k}/{subject_name}/")
+            run = int(file[24:26])
+            if not os.path.exists(f"data/{k}/{run}/{language}/"):
+                os.makedirs(f"data/{k}/{run}/{language}/")
+            save_nii_as_txt(file, f"data/{k}/{run}/{language}/")
             print(file)
     
 #config 3: different language
