@@ -8,7 +8,7 @@ from tqdm.notebook import tqdm
 import numpy as np
 import scipy.io
 import matplotlib.pyplot as plt
-
+from collections import Counter
 from model_m2dcnn import M2DCNN
 from model_3dcnn import CNN3D
 from dataset import mt_Dataset, lpp_Dataset
@@ -150,7 +150,7 @@ def plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
     #send_image(path_to_img=path_to_image, message='Loss results')
 
 
-def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, num_epochs = 300):
+def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, num_epochs = 300, weights=None):
     seed_everything()
 
     # DataLoader
@@ -164,7 +164,8 @@ def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, nu
     dataloaders_dict = {"train": train_dataloader, "valid": valid_dataloader, "test": test_dataloader}
 
     model = M2DCNN(numClass=nb_classes, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73)
-
+    if weights != None:
+        model.load_state_dict(torch.load(weights))
     
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(params=model.parameters(),lr=0.001,betas=(0.9, 0.999))
@@ -223,9 +224,25 @@ def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300, nb_
     
     return test_accuracy.cpu().numpy()
 
+def calc_baseline(lbl = "data/Test/", language = "EN"):
+    prob = 0
+    labels = []
+    for run in os.listdir(lbl):
+        path = lbl +"/"+ run + "/" + language
+        multiplier = len(os.listdir(path))-1
+        if multiplier>0:
+            for _ in range(int(multiplier/len(np.loadtxt(path+"/labels.txt")))):
+                labels.append(np.loadtxt(path+"/labels.txt"))
+    labels = np.concatenate(labels).ravel()
+    total = labels.size
+    label_c = Counter(labels)
+    for _, v in label_c.items():
+        prob += (v/total)**2
+    return prob
+
 def write_result(acc, top3, config):
     with open("results/result_log.txt", "a") as f:
-        string = f"\n\n{datetime.datetime.now()}\nconfig: {config}\naccuracy : {acc}\ntop3 accuracy : {top3}"
+        string = f"\n\n{datetime.datetime.now()}\nconfig: {config}\naccuracy : {acc}\nBaseline : {calc_baseline()}\ntop3 accuracy : {top3}"
         f.write(string)
         f.close()
 
@@ -264,7 +281,7 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
     return model, acc
 
 
-def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d"):
+def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d", weights = None):
     if binary:
         nb_classes = 2
     else:
@@ -274,7 +291,7 @@ def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d"):
     t0 = datetime.datetime.now()
     print(t0)
     if model == "2d":
-        train_m2dcnn(path, config, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs)
+        train_m2dcnn(path, config, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs, weights=weights)
     else:
         train_3dcnn(path, config, num_epochs=num_epochs, batch_size=batch_size, nb_classes=nb_classes)
     print(datetime.datetime.now()-t0)

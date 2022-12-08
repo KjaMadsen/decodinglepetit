@@ -102,13 +102,13 @@ def config2(data, unsorted_data_dir, language = "EN"):
     subject_name = random.choice(list(relevant_files.keys())) #choose a random subject for training
     subject = relevant_files[subject_name]
     random.shuffle(subject) 
-    train = subject[:len(subject)-1]
+    train = subject[:len(subject)-2]
     val = [subject[-2]]
     test = [subject[-1]]
     folders = {"Train":train, "Val":val, "Test":test}
     for k, v in folders.items():
-        for file in v:
-            run = int(file[24:26])
+        for file_tuple in v:
+            run, file = file_tuple
             if not os.path.exists(f"data/{k}/{run}/{language}/"):
                 os.makedirs(f"data/{k}/{run}/{language}/")
             save_nii_as_txt(file, f"data/{k}/{run}/{language}/")
@@ -287,7 +287,7 @@ def main():
         print("Done retriving data")
         
         print("Moving data into folders....")
-        config1(data, unsorted_data_dir, language=language)
+        config2(data, unsorted_data_dir, language=language)
         # config2(data, unsorted_data_dir, language="EN")
         # config3(data, train_language="CN", test_language="EN")
     oov = "-1" #label to assign to 'out of vocabulary' words
