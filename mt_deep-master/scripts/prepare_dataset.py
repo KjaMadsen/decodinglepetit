@@ -76,13 +76,33 @@ def save_nii_as_txt(file, destination):
 
 #config 1: same language, different subjects
 #obs: need to make sure that the same subject is not in train/val/test
-def config1(data, unsorted_data_dir, language = "EN", split=(0.8,0.1,0.1)):
+def config2(data, unsorted_data_dir, language = "EN", split=(0.8,0.1,0.1)):
+    relevant_files = sort_by_language(data, unsorted_data_dir)[language]
+    random.shuffle(relevant_files)
+    split_ = (int(len(relevant_files)*split[0]), int(len(relevant_files)*split[0])+int(len(relevant_files)*split[1])) 
+    train = relevant_files[:split_[0]]
+    val = relevant_files[split_[0]:split_[1]]
+    test = relevant_files[split_[1]:]
+    folders = {"Train":train, "Val":val, "Test":test}
+    for partition, data in folders.items():
+        for run, file in data:
+            if not os.path.exists(f"data/{partition}/{run}/{language}/"):
+                os.makedirs(f"data/{partition}/{run}/{language}/")
+            #shutil.copy(file, f"data/{partition}/{run}/{language}/")
+            print(file)
+            save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
+               
+    
+#config 2: same language, same subject
+#use only one subject to train/val/test
+#obs: need to make sure the labels exists in train/val/test
+def config1(data, unsorted_data_dir, language = "EN", split = (0.8,0.1,0.1)):
     relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
     relevant_files = shuffle_dict(relevant_files)
     split_ = (int(len(relevant_files)*split[0]), int(len(relevant_files)*split[0])+int(len(relevant_files)*split[1])) 
-    train = list(relevant_files.keys())[:split_[0]]
-    val = list(relevant_files.keys())[split_[0]:split_[1]]
-    test = list(relevant_files.keys())[split_[1]:]
+    train = list(relevant_files.values())[:split_[0]]
+    val = list(relevant_files.values())[split_[0]:split_[1]]
+    test = list(relevant_files.values())[split_[1]:]
     folders = {"Train":train, "Val":val, "Test":test}
     for partition, subs in folders.items():
         for sub in subs:
@@ -92,27 +112,6 @@ def config1(data, unsorted_data_dir, language = "EN", split=(0.8,0.1,0.1)):
                 #shutil.copy(file, f"data/{partition}/{run}/{language}/")
                 print(file)
                 save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
-               
-    
-#config 2: same language, same subject
-#use only one subject to train/val/test
-#obs: need to make sure the labels exists in train/val/test
-def config2(data, unsorted_data_dir, language = "EN"):
-    relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
-    subject_name = random.choice(list(relevant_files.keys())) #choose a random subject for training
-    subject = relevant_files[subject_name]
-    random.shuffle(subject) 
-    train = subject[:len(subject)-2]
-    val = [subject[-2]]
-    test = [subject[-1]]
-    folders = {"Train":train, "Val":val, "Test":test}
-    for k, v in folders.items():
-        for file_tuple in v:
-            run, file = file_tuple
-            if not os.path.exists(f"data/{k}/{run}/{language}/"):
-                os.makedirs(f"data/{k}/{run}/{language}/")
-            save_nii_as_txt(file, f"data/{k}/{run}/{language}/")
-            print(file)
     
 #config 3: different language
 def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"):
