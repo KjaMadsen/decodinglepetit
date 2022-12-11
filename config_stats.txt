@@ -44,3 +44,24 @@
 2th to 16th
 ('know ', 1026), ('will ', 918), ('asked ', 756), ('come ', 702), ('make ', 648), ('see ', 648), ('understand ', 621), ('look ', 621), ('replied ', 513), ('made ', 513), ('would ', 486), ('say ', 459), ('looked ', 432), ('came ', 432), ('go ', 432), 
 {"Test": 436, "Train": 19107, "Val": 2340}
+
+----config2.1----
+
+
+2022-12-11 15:50:23.532860
+2th to 16th
+('know ', 1026), ('will ', 918), ('asked ', 756), ('come ', 702), ('make ', 648), ('see ', 648), ('understand ', 621), ('look ', 621), ('replied ', 513), ('made ', 513), ('would ', 486), ('say ', 459), ('looked ', 432), ('came ', 432), ('go ', 432), 
+{"Test": 2414, "Train": 19067, "Val": 2423}
+
+
+2022-12-11 17:23:12.146114
+2th to 16th
+('planet ', 1593), ('flower ', 1215), ('stars ', 1107), ('sheep ', 891), ('king ', 783), ('morning ', 729), ('time ', 675), ('day ', 567), ('geographer ', 540), ('grownups ', 513), ('one ', 486), ('water ', 486), ('friend ', 459), ('men ', 459), ('man ', 432), 
+{"Test": 2801, "Train": 22625, "Val": 2846}
+
+2022-12-11 18:24:34.899156
+3th to 17th
+('other ', 513), ('important ', 513), ('old ', 459), ('small ', 459), ('same ', 405), ('first ', 378), ('beautiful ', 378), ('able ', 351), ('more ', 351), ('long ', 324), ('conceited ', 324), ('much ', 297), ('single ', 297), ('right ', 243), ('bad ', 243), 
+{"Test": 1335, "Train": 10492, "Val": 1277}
+
+

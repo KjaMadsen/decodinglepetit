@@ -55,7 +55,7 @@ def train_model_m2dcnn(model, dataloaders_dict, criterion, optimizer, scheduler,
                 if is3D:
                     inputs = inputs.unsqueeze(1)
                 if iteration%100==0:
-                    print(f"{iteration*10000/length : .2f}", "%")
+                    print(f"{iteration*5000/length : .2f}", "%")
                 
                 
                 optimizer.zero_grad()
@@ -254,7 +254,7 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
     top3_corrects = 0
     confusion_matrix = torch.zeros(nb_classes, nb_classes)
     for inputs, labels in tqdm(dataloader):
-        print("..")
+       
         inputs = inputs.float()
         inputs = inputs.to(device)
         labels = labels.to(device)
