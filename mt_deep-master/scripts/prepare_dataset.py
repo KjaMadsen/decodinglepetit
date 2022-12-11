@@ -72,8 +72,7 @@ def save_nii_as_npy(file, destination):
     img = nib.load(file).get_fdata(dtype=np.float32).transpose(3,0,1,2)
     for idx, t in enumerate(img[4:]): #discard first four
         np.save(destination + file[35:45] + file[56:63] + f"_{idx}", t)
-    
-        
+
 def config2(data_dir, split=(0.8,0.1,0.1), language = "EN"):
     all_files = []
     for run in range(9):
@@ -90,6 +89,26 @@ def config2(data_dir, split=(0.8,0.1,0.1), language = "EN"):
             if not os.path.exists(f"data/{partition}/{run}/{language}"):
                 os.makedirs(f"data/{partition}/{run}/{language}")
             shutil.move(file, f"data/{partition}/{run}/{language}")
+            
+    for run in range(9):
+        shutil.rmtree(f"data/{run}")
+        #os.remove(f"data/{run}")  
+        
+def config1(data_dir, split=(0.8,0.1,0.1), language = "EN"):
+    all_files = []
+    for run in range(9):
+        for sub in os.listdir(f"{data_dir}/{run}/{language}"):
+            all_files.append((run, f"{data_dir}/{run}/{language}/{sub}"))
+    
+    train, test_val, _, _ = train_test_split(all_files, [""]*len(all_files), test_size = 1-split[0], random_state = 1234)
+    val, test, _, _ = train_test_split(test_val, [""]*len(test_val), test_size = 0.5, random_state = 1234)
+    
+    for partition, l in [("Train", train), ("Val", val), ("Test", test)]:
+        for run, sub in l:
+            for file in os.listdir(sub):
+                if not os.path.exists(f"data/{partition}/{run}/{language}"):
+                    os.makedirs(f"data/{partition}/{run}/{language}")
+                shutil.move(file, f"data/{partition}/{run}/{language}")
             
     for run in range(9):
         shutil.rmtree(f"data/{run}")
