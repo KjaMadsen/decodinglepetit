@@ -65,3 +65,8 @@
 {"Test": 1335, "Train": 10492, "Val": 1277}
 
 
+
+2022-12-11 22:45:05.052890
+2th to 16th
+('thousand ', 405), ('three ', 405), ('six ', 324), ('million ', 297), ('four ', 270), ('two ', 216), ('612 ', 216), ('five ', 189), ('eleven ', 162), ('hundred ', 135), ('twenty ', 108), ('325 ', 81), ('forty ', 81), ('thirty ', 81), ('billion ', 81), 
+{"Test": 655, "Train": 4946, "Val": 543}
