@@ -7,6 +7,7 @@ import pandas as pd
 from copy import copy
 import nibabel as nib
 import codecs
+from sklearn.model_selection import train_test_split
 #Structure
 #
 # data - raw_data/derivatives
@@ -67,73 +68,37 @@ def make_labels_dict_file(labels_dict, dir="./"):
         for k,v in labels_dict.items():
             f.writelines(str(k) + " = "+ str(v) + "\n")
 
-def save_nii_as_txt(file, destination):
+def save_nii_as_npy(file, destination):
     img = nib.load(file).get_fdata(dtype=np.float32).transpose(3,0,1,2)
     for idx, t in enumerate(img[4:]): #discard first four
         np.save(destination + file[35:45] + file[56:63] + f"_{idx}", t)
     
         
+def config2(data_dir, split=(0.8,0.1,0.1), language = "EN"):
+    all_files = []
+    for sub in os.listdir(f"{data_dir}/{language}"):
+        for file in os.listdir(f"{data_dir}/{language}/{sub}"):
+            all_files.append(file)
 
-#config 1: same language, different subjects
-#obs: need to make sure that the same subject is not in train/val/test
-def config2(data, unsorted_data_dir, language = "EN", split=(0.8,0.1,0.1)):
-    relevant_files = sort_by_language(data, unsorted_data_dir)[language]
-    random.shuffle(relevant_files)
-    split_ = (int(len(relevant_files)*split[0]), int(len(relevant_files)*split[0])+int(len(relevant_files)*split[1])) 
-    train = relevant_files[:split_[0]]
-    val = relevant_files[split_[0]:split_[1]]
-    test = relevant_files[split_[1]:]
-    folders = {"Train":train, "Val":val, "Test":test}
-    for partition, data in folders.items():
-        for run, file in data:
-            if not os.path.exists(f"data/{partition}/{run}/{language}/"):
-                os.makedirs(f"data/{partition}/{run}/{language}/")
-            #shutil.copy(file, f"data/{partition}/{run}/{language}/")
-            print(file)
-            save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
+    train, test_val, _, _ = train_test_split(all_files, [""]*len(all_files), test_size = split[0], random_state = 1234)
+    val, test, _, _ = train_test_split(test_val, [""]*len(test_val), test_size = 0.5, random_state = 1234)
+    for partition, l in [("Train", train), ("Val", val), ("Test", test)]:
+        for file in l:
+            for run in range(9):
+                if not os.path.exists(f"data/{partition}/{run}/{language}"):
+                    os.makedirs(f"data/{partition}/{run}/{language}")
+                shutil.move(f"data/{run}/{language}/{file}", f"data/{partition}/{run}/{language}")
                
-    
-#config 2: same language, same subject
-#use only one subject to train/val/test
-#obs: need to make sure the labels exists in train/val/test
-def config1(data, unsorted_data_dir, language = "EN", split = (0.8,0.1,0.1)):
+
+def load_data(data, unsorted_data_dir, language = "EN"):
     relevant_files = sort_by_subject(sort_by_language(data, unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
-    relevant_files = shuffle_dict(relevant_files)
-    split_ = (int(len(relevant_files)*split[0]), int(len(relevant_files)*split[0])+int(len(relevant_files)*split[1])) 
-    train = list(relevant_files.values())[:split_[0]]
-    val = list(relevant_files.values())[split_[0]:split_[1]]
-    test = list(relevant_files.values())[split_[1]:]
-    folders = {"Train":train, "Val":val, "Test":test}
-    for partition, subs in folders.items():
-        for sub in subs:
-            for run, file in relevant_files[sub]:
-                if not os.path.exists(f"data/{partition}/{run}/{language}/"):
-                    os.makedirs(f"data/{partition}/{run}/{language}/")
-                #shutil.copy(file, f"data/{partition}/{run}/{language}/")
-                print(file)
-                save_nii_as_txt(file, f"data/{partition}/{run}/{language}/")
+    for sub, data in relevant_files.items():
+        run, name = sub
+        if not os.path.exists(f"data/{run}/{language}/{name}"):
+            os.makedirs(f"data/{run}/{language}/{name}")
+        print(data)
+        save_nii_as_npy(data, f"data/{run}/{language}/{name}")
     
-#config 3: different language
-def config3(data, unsorted_data_dir, train_language = "CN", test_language = "EN"):
-    raise Exception
-    train_files = sort_by_language(data, unsorted_data_dir)[train_language]
-    test_files = sort_by_language(data, unsorted_data_dir)[test_language]
-
-    for run, file in train_files:
-        if not os.path.exists(f"data/Train/{run}/{train_language}/"):
-                os.makedirs(f"data/Train/{run}/{train_language}/")
-        shutil.copy(file, f"data/Train/{run}/{train_language}/")
-
-    val = test_files.items()[:len(test_files)/2]
-    test = test_files.items()[len(test_files)/2:]
-    for run, file in val:
-        if not os.path.exists(f"data/Val/{run}/{test_language}/"):
-                os.makedirs(f"data/Val/{run}/{test_language}/")
-        shutil.copy(file, f"data/Val/{run}/{test_language}/")
-    for run, file in test:
-        if not os.path.exists(f"data/Test/{run}/{test_language}/"):
-                os.makedirs(f"data/Test/{run}/{test_language}/")
-        shutil.copy(file, f"data/Test/{run}/{test_language}/")
 
 def prepare_spare_classes(annotation_file, destination_dir, target_words, language="EN", oov=""):
     # target_words = {"me" : 0, "you": 1, "myself": 0}
@@ -198,7 +163,7 @@ def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language 
                 result[section].append((on_index, off_index, w))
         count[section] = off_index
     
-    #print(reformat_messy_dict(result, oov, count))
+    print(reformat_messy_dict(result, oov, count))
     output = words_to_labels(reformat_messy_dict(result, oov, count))
     
     for n in ["Train", "Val", "Test"]:
@@ -234,7 +199,7 @@ def prepare_labels(annotation_file, destination_dir, language = "EN", pos="PRON"
             if row["pos"] == pos:
                 result[section].append((on_index, off_index, w))
         count[section] = off_index
-    #print(reformat_messy_dict(result, oov, count))
+    print(reformat_messy_dict(result, oov, count))
     output = words_to_labels(reformat_messy_dict(result, oov, count))
     
     for n in ["Train", "Val", "Test"]:
@@ -286,7 +251,7 @@ def main():
         print("Done retriving data")
         
         print("Moving data into folders....")
-        config2(data, unsorted_data_dir, language=language)
+        config1(data, unsorted_data_dir, language=language)
         # config2(data, unsorted_data_dir, language="EN")
         # config3(data, train_language="CN", test_language="EN")
     oov = "-1" #label to assign to 'out of vocabulary' words
