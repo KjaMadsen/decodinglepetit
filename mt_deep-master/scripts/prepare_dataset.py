@@ -92,7 +92,8 @@ def config2(data_dir, split=(0.8,0.1,0.1), language = "EN"):
             
     for run in range(9):
         shutil.rmtree(f"data/{run}")
-        #os.remove(f"data/{run}")  
+        #os.remove(f"data/{run}")
+    return "config2"  
         
 def config1(data_dir, split=(0.8,0.1,0.1), language = "EN"):
     print("config1 running...\n")
@@ -119,6 +120,7 @@ def config1(data_dir, split=(0.8,0.1,0.1), language = "EN"):
         shutil.rmtree(f"data/{run}")
         #os.remove(f"data/{run}")
     print("\nconfig 1 ready\n")
+    return "config1"
 
 def load_data(unsorted_data_dir, language = "EN"):
     print("loading data.....")

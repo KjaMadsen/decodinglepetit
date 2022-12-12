@@ -150,13 +150,13 @@ def plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
     #send_image(path_to_img=path_to_image, message='Loss results')
 
 
-def train_m2dcnn(dataset_path, condition,nb_classes = 619,  batch_size = 128, num_epochs = 300, weights=None):
+def train_m2dcnn(dataset_path, condition, langauge, nb_classes = 619,  batch_size = 128, num_epochs = 300, weights=None):
     seed_everything()
 
     # DataLoader
-    train_dataset = lpp_Dataset(dataset_path[0], language="EN")
-    valid_dataset = lpp_Dataset(dataset_path[1], language="EN")
-    test_dataset = lpp_Dataset(dataset_path[2], language="EN")
+    train_dataset = lpp_Dataset(dataset_path[0], language=langauge)
+    valid_dataset = lpp_Dataset(dataset_path[1], language=langauge)
+    test_dataset = lpp_Dataset(dataset_path[2], language=langauge)
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
@@ -281,7 +281,7 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
     return model, acc
 
 
-def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d", weights = None):
+def train(binary, batch_size, num_epochs, language, config="config1_EN", model = "2d", weights = None):
     if binary:
         nb_classes = 2
     else:
@@ -291,7 +291,7 @@ def train(binary, batch_size, num_epochs, config="config1_EN", model = "2d", wei
     t0 = datetime.datetime.now()
     print(t0)
     if model == "2d":
-        train_m2dcnn(path, config, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs, weights=weights)
+        train_m2dcnn(path, config, language, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs, weights=weights)
     else:
         train_3dcnn(path, config, num_epochs=num_epochs, batch_size=batch_size, nb_classes=nb_classes)
     print(datetime.datetime.now()-t0)
