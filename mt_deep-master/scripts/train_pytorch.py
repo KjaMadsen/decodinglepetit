@@ -241,8 +241,9 @@ def calc_baseline(lbl = "data/Test/", language = "EN"):
     return prob
 
 def write_result(acc, top3, config):
+    l = config.split("_")[1]
     with open("results/result_log.txt", "a") as f:
-        string = f"\n\n{datetime.datetime.now()}\nconfig: {config}\naccuracy : {acc}\nBaseline : {calc_baseline()}\ntop3 accuracy : {top3}"
+        string = f"\n\n{datetime.datetime.now()}\nconfig: {config}\naccuracy : {acc}\nBaseline : {calc_baseline(language=l)}\ntop3 accuracy : {top3}"
         f.write(string)
         f.close()
 
