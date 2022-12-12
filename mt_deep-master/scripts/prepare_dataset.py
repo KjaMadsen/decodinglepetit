@@ -95,27 +95,33 @@ def config2(data_dir, split=(0.8,0.1,0.1), language = "EN"):
         #os.remove(f"data/{run}")  
         
 def config1(data_dir, split=(0.8,0.1,0.1), language = "EN"):
-    all_files = []
+    print("config1 running...\n")
+    tmp = {k:[] for k in os.listdir(f"{data_dir}/0/{language}")}
     for run in range(9):
         for sub in os.listdir(f"{data_dir}/{run}/{language}"):
-            all_files.append((run, f"{data_dir}/{run}/{language}/{sub}"))
-    
+            tmp[sub]+= [(run, f"{data_dir}/{run}/{language}/{sub}")]
+            #all_files.append((run, f"{data_dir}/{run}/{language}/{sub}"))
+    all_files = list(tmp.values())
     train, test_val, _, _ = train_test_split(all_files, [""]*len(all_files), test_size = 1-split[0], random_state = 1234)
     val, test, _, _ = train_test_split(test_val, [""]*len(test_val), test_size = 0.5, random_state = 1234)
     
     for partition, l in [("Train", train), ("Val", val), ("Test", test)]:
-        for run, sub in l:
-            for file in os.listdir(sub):
-                if not os.path.exists(f"data/{partition}/{run}/{language}"):
-                    os.makedirs(f"data/{partition}/{run}/{language}")
-                shutil.move(file, f"data/{partition}/{run}/{language}")
+        for sub in l:
+            print(sub)
+            for run, path in sub:
+                for file in os.listdir(path):
+                    if not os.path.exists(f"data/{partition}/{run}/{language}"):
+                        os.makedirs(f"data/{partition}/{run}/{language}")
+                    shutil.move(path + "/" + file, f"data/{partition}/{run}/{language}")
+                    
             
     for run in range(9):
         shutil.rmtree(f"data/{run}")
         #os.remove(f"data/{run}")
-               
+    print("\nconfig 1 ready\n")
 
 def load_data(unsorted_data_dir, language = "EN"):
+    print("loading data.....")
     relevant_files = sort_by_subject(sort_by_language(get_all_data(unsorted_data_dir), unsorted_data_dir)[language], unsorted_data_dir, add_run=True)
     for sub, data in relevant_files.items():
         for run, file in data:
@@ -123,7 +129,7 @@ def load_data(unsorted_data_dir, language = "EN"):
                 os.makedirs(f"data/{run}/{language}/{sub}")
             print(file)
             save_nii_as_npy(file, f"data/{run}/{language}/{sub}")
-    
+    print("\ndone loading data!\n")
 
 def prepare_spare_classes(annotation_file, destination_dir, target_words, language="EN", oov=""):
     # target_words = {"me" : 0, "you": 1, "myself": 0}
@@ -295,5 +301,6 @@ def main():
     return 0
 
 if __name__=="__main__":
-    load_data("raw_data/derivatives/")
-    config2("data/")
+    #clear_data_dir()
+    #load_data("raw_data/derivatives/")
+    config1("data/")

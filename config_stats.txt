@@ -70,3 +70,22 @@
 2th to 16th
 ('thousand ', 405), ('three ', 405), ('six ', 324), ('million ', 297), ('four ', 270), ('two ', 216), ('612 ', 216), ('five ', 189), ('eleven ', 162), ('hundred ', 135), ('twenty ', 108), ('325 ', 81), ('forty ', 81), ('thirty ', 81), ('billion ', 81), 
 {"Test": 655, "Train": 4946, "Val": 543}
+
+---updated config1---
+
+2022-12-12 14:09:34.800370
+2th to 16th
+('know ', 1026), ('will ', 918), ('asked ', 756), ('come ', 702), ('make ', 648), ('see ', 648), ('understand ', 621), ('look ', 621), ('replied ', 513), ('made ', 513), ('would ', 486), ('say ', 459), ('looked ', 432), ('came ', 432), ('go ', 432), 
+{"Test": 2490, "Train": 18924, "Val": 2490}
+
+2022-12-12 14:59:58.270751
+2th to 16th
+('planet ', 1593), ('flower ', 1215), ('stars ', 1107), ('sheep ', 891), ('king ', 783), ('morning ', 729), ('time ', 675), ('day ', 567), ('geographer ', 540), ('grownups ', 513), ('one ', 486), ('water ', 486), ('friend ', 459), ('men ', 459), ('man ', 432), 
+{"Test": 2945, "Train": 22382, "Val": 2945}
+
+--new split=0.9,0.1,0.1--
+
+2022-12-12 17:28:27.251796
+2th to 16th
+('know ', 1026), ('will ', 918), ('asked ', 756), ('come ', 702), ('make ', 648), ('see ', 648), ('understand ', 621), ('look ', 621), ('replied ', 513), ('made ', 513), ('would ', 486), ('say ', 459), ('looked ', 432), ('came ', 432), ('go ', 432), 
+{"Test": 1494, "Train": 21414, "Val": 996}
