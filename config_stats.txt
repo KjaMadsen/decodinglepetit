@@ -89,3 +89,13 @@
 2th to 16th
 ('know ', 1026), ('will ', 918), ('asked ', 756), ('come ', 702), ('make ', 648), ('see ', 648), ('understand ', 621), ('look ', 621), ('replied ', 513), ('made ', 513), ('would ', 486), ('say ', 459), ('looked ', 432), ('came ', 432), ('go ', 432), 
 {"Test": 1494, "Train": 21414, "Val": 996}
+
+2022-12-12 20:13:41.255606
+3th to 17th
+('other ', 513), ('important ', 513), ('old ', 459), ('small ', 459), ('same ', 405), ('first ', 378), ('beautiful ', 378), ('able ', 351), ('more ', 351), ('long ', 324), ('conceited ', 324), ('much ', 297), ('single ', 297), ('right ', 243), ('bad ', 243), 
+{"Test": 819, "Train": 11739, "Val": 546}
+
+2022-12-12 20:38:28.882175
+3th to 17th
+('other ', 513), ('important ', 513), ('old ', 459), ('small ', 459), ('same ', 405), ('first ', 378), ('beautiful ', 378), ('able ', 351), ('more ', 351), ('long ', 324), ('conceited ', 324), ('much ', 297), ('single ', 297), ('right ', 243), ('bad ', 243), 
+{"Test": 1335, "Train": 10492, "Val": 1277}
