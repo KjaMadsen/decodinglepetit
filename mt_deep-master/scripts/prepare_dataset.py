@@ -196,7 +196,6 @@ def prepare_handpicked_labels(annotation_file, destination_dir, vocab, language 
                 result[section].append((on_index, off_index, w))
         count[section] = off_index
     
-    print(reformat_messy_dict(result, oov, count))
     output = words_to_labels(reformat_messy_dict(result, oov, count))
     
     for n in ["Train", "Val", "Test"]:
