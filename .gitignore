@@ -136,4 +136,7 @@ venv/
 label_dict.txt
 *.png
 results/
+Val/
+Train/
+Test/
 aux_data/

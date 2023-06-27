@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from model_m2dcnn import M2DCNN
 from model_3dcnn import CNN3D
-from dataset import mt_Dataset, lpp_Dataset
+from dataset import lpp_Dataset
 
 import torch
 from torch import nn
@@ -19,6 +19,7 @@ from torch.functional import F
 from torch.utils.data import DataLoader
 from torch.optim import Adam 
 from torch.optim.lr_scheduler import ExponentialLR
+import json
 
 
 device = torch.device('cpu' if not torch.cuda.is_available() else 'cuda')
@@ -150,13 +151,13 @@ def plot_loss_accuracy(train_accuracy, valid_accuracy, test_accuracy, condition)
     #send_image(path_to_img=path_to_image, message='Loss results')
 
 
-def train_m2dcnn(dataset_path, condition, langauge, nb_classes = 619,  batch_size = 128, num_epochs = 300, weights=None):
+def train_m2dcnn(dataset_path, condition, langauge, nb_classes = 619,  batch_size = 128, num_epochs = 300, weights=None, oov=15):
     seed_everything()
 
     # DataLoader
-    train_dataset = lpp_Dataset(dataset_path[0], language=langauge)
-    valid_dataset = lpp_Dataset(dataset_path[1], language=langauge)
-    test_dataset = lpp_Dataset(dataset_path[2], language=langauge)
+    train_dataset = lpp_Dataset(dataset_path[0], language=langauge, ignoreOOV=oov)
+    valid_dataset = lpp_Dataset(dataset_path[1], language=langauge, ignoreOOV=oov)
+    test_dataset = lpp_Dataset(dataset_path[2], language=langauge, ignoreOOV=oov)
 
     train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     valid_dataloader = DataLoader(valid_dataset, batch_size = batch_size, shuffle = False)
@@ -187,7 +188,7 @@ def train_m2dcnn(dataset_path, condition, langauge, nb_classes = 619,  batch_siz
     
     return test_accuracy
 
-def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300, nb_classes=32):
+def train_3dcnn(dataset_path, condition, batch_size = 128, num_epochs = 300, nb_classes=32, oov=15):
     seed_everything()
 
     # DataLoader
@@ -282,20 +283,16 @@ def test(model, config:str, weights_file,nb_classes, dataloader):
     return model, acc
 
 
-def train(binary, batch_size, num_epochs, language, config="config1_EN", model = "2d", weights = None):
-    if binary:
-        nb_classes = 2
-    else:
-        with codecs.open("label_dict.txt", "r", encoding="utf-8") as f:
-            nb_classes = len(f.readlines())
-    path = ["data/Train", "data/Val", "data/Test"]
+def train(nb_classes, batch_size, num_epochs, language, config="config1_EN", model = "2d", weights = None, oov=15):
+    path = ["Train/data", "Val/data", "Test/data"]
     t0 = datetime.datetime.now()
     print(t0)
     if model == "2d":
-        train_m2dcnn(path, config, language, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs, weights=weights)
+        train_m2dcnn(path, config, language, nb_classes=nb_classes, batch_size=batch_size, num_epochs=num_epochs, weights=weights, oov=oov)
     else:
-        train_3dcnn(path, config, num_epochs=num_epochs, batch_size=batch_size, nb_classes=nb_classes)
-    print(datetime.datetime.now()-t0)
+        train_3dcnn(path, config, num_epochs=num_epochs, batch_size=batch_size, nb_classes=nb_classes, oov=oov)
+    print("Duration = ", datetime.datetime.now()-t0)
+
 if __name__ == "__main__":
     test_dataloader = DataLoader(lpp_Dataset("data/Test/"), batch_size=50, shuffle=False)
     test(M2DCNN(numClass=16, numFeatues=30880, DIMX=74, DIMY=90, DIMZ=73), "config1_EN_top15Nouns","results/config1_EN_top15Noun_weights.pth", 16, test_dataloader)
